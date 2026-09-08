@@ -1,6 +1,43 @@
 # Changelog
 
 
+## v1.7
+
+- Turkish characters render correctly: the launcher now writes the embedded script as UTF-8
+  with BOM, which Windows PowerShell 5.1 needs to read `ş ğ ı` properly.
+
+- Window is 80×34 (wider, a little shorter), Consolas 20, 60-column box; all labels carry
+  Turkish characters (**Tümünü Düzelt**, **İzleyici Kur**, **Çıkış**).
+
+- USB cleanup covers more worm families: hidden container folders named `_`, blank,
+  punctuation, `recycle.bin`, or referenced by a malicious shortcut are restored; hidden
+  `.vbs .js .jse .wsf .hta .bat .cmd .scr .pif .com` payloads and folder-icon `.exe` mimics
+  are moved to quarantine (`%LOCALAPPDATA%\Usb-Guard\quarantine\<date>-usb-<letter>`)
+  instead of deleted.
+
+- Data-loss fixes in restore: a root name clash gets a ` (2)` suffix instead of being skipped
+  and then deleted with the folder; a folder is removed only when it is empty. Fixed a
+  variable-shadowing bug in the step runner that made the `sysvolume\<label>` restore
+  silently skip.
+
+- Malicious shortcut detection no longer flags every `.lnk` on the drive; only shortcuts whose
+  target or arguments run a script engine, `cmd`, `sysvolume`, or that carry the drive label
+  or a hidden folder name.
+
+- Drive label and file system come from `Win32_LogicalDisk`, so the Storage module is no
+  longer required. USB hard disks (`DriveType` 3 with `BusType` USB) are listed; the system
+  drive never is.
+
+- PC scan adds per-user Winlogon `Shell`, `AppInit_DLLs` and IFEO `Debugger` hijacks of
+  Task Manager, Registry Editor, cmd, msconfig, Explorer, mmc, PowerShell, Process Explorer.
+
+- New optional menu item **Betik Motorunu Kapat / Aç**: toggles Windows Script Host via
+  `HKLM\Software\Microsoft\Windows Script Host\Settings\Enabled`; the status row shows
+  **Betik Motoru : Açık / Kapalı**.
+
+- Watcher inspects shortcut targets and arguments before offering cleanup.
+
+
 ## v1.6
 
 - Bigger interface: the console is switched to Consolas 20 on open, the window grows to

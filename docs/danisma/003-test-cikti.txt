@@ -1,0 +1,73 @@
+=== Sentetik USB testi (usbtest.ps1) ===
+--- before ---
+Hidden, System, Directory Fotoğraflar
+Hidden, System, Directory sysvolume
+Hidden, System, Directory _
+Archive  autorun.inf
+Archive  belge.docx.lnk
+Archive  Fotoğraflar.exe
+Archive  mylink.lnk
+Hidden, System, Archive x.vbs
+Archive  çakış.txt
+rapor exists: True
+BadLnk: X:\belge.docx.lnk
+Hidden: X:\sysvolume, X:\_
+Payload: X:\x.vbs
+Mimic: X:\Fotoğraflar.exe
+Infected: True
+  ============================================================
+  Hedef  : X:\
+  Etiket : 'TESTUSB'
+  Fs     : NTFS
+  Durum  : Solucan İzi Var
+  ============================================================
+  [ Temizlik ]
+  Çalışan Solucanı Durdur                                  [Ok]
+  Zararlı Kısayollar (1)                                   [Ok]
+  Yük Dosyalarını Karantinaya Al (2)                       [Ok]
+  Gizlenen Dosyaları Geri Taşı                             [Ok]
+  Sysvolume Yükünü Kaldır                                  [Ok]
+  [ Görünürlük ]
+  Dosyaları Görünür Yap                                    [Ok]
+  [ Bağışıklık ]
+  Kilitle: sysvolume                                       [Ok]
+  Kilitle: autorun.inf                                     [Ok]
+  Kilitle: recycler                                        [Ok]
+  Kilitle: recycled                                        [Ok]
+  Kilitle: TESTUSB                                         [Ok]
+  X:\ Tamamlandı.
+  Karantina: C:\Users\Teknesyum\AppData\Local\Usb-Guard\quarantine\20260908-191305-usb-X
+  Öneri: Menüden "Bu PC'yi Tara" ile bilgisayarı da kontrol et.
+--- after ---
+Directory X:\Alt
+ReadOnly, Hidden, System, Directory X:\autorun.inf
+Directory X:\Fotoğraflar
+ReadOnly, Hidden, System, Directory X:\recycled
+ReadOnly, Hidden, System, Directory X:\recycler
+ReadOnly, Hidden, System, Directory X:\sysvolume
+ReadOnly, Hidden, System, Directory X:\TESTUSB
+Archive  X:\belge.docx
+Archive  X:\mylink.lnk
+Archive  X:\rapor.txt
+Archive  X:\çakış (2).txt
+Archive  X:\çakış.txt
+Archive  X:\Alt\a.txt
+Directory X:\autorun.inf\con..
+_ contents:
+çakış outer: outer
+Fotoğraflar contents: f.jpg
+rapor at root: True
+quarantine 20260908-191305-usb-X: C:\Users\Teknesyum\AppData\Local\Usb-Guard\quarantine\20260908-191305-usb-X\Fotoğraflar.exe, C:\Users\Teknesyum\AppData\Local\Usb-Guard\quarantine\20260908-191305-usb-X\u123456.vbs, C:\Users\Teknesyum\AppData\Local\Usb-Guard\quarantine\20260908-191305-usb-X\x.vbs
+immunized sysvolume: True  TESTUSB: True
+Infected now: False
+
+=== PC taraması (pcscan.ps1) ===
+bulgu: 0
+wsh: True
+
+=== bat çözme (decodetest.ps1) ===
+bom: True
+ver: 1.7
+turkish ok: True
+parse errors: 0
+decoded == source: True

@@ -44,9 +44,12 @@ VBS ve JS solucanlarını da kapsar.
   `mshta` çalıştıran kısayollar dosyalarınla aynı adı taşısa da yakalanır.
 
 - Gerçek dosyalarını gizli klasörden geri taşır: solucan sürücü etiketini, `sysvolume\<etiket>`
-  yolunu ya da boş adlı klasörü kullanmış olsa da.
+  yolunu, `_`, boş adı ya da sahte `recycle.bin` klasörünü kullanmış olsa da. Kökte aynı adlı
+  dosya varsa ` (2)` eki alır; hiçbir şey üzerine yazılmaz, kaybolmaz.
 
-- Yükü siler, Sistem + Gizli özniteliklerini kaldırır.
+- Yükü (gizli `.vbs` / `.js` / `.bat` / `.hta` / `.scr` dosyaları ve gizli klasörlerinle aynı
+  adı taşıyan klasör-ikonlu `.exe` taklitleri) `%LOCALAPPDATA%\Usb-Guard` altında karantinaya
+  taşır, ardından Sistem + Gizli özniteliklerini kaldırır.
 
 
 ### USB'yi Aşılar
@@ -75,6 +78,7 @@ Baktığı yerler:
 | --- | --- |
 | Çalışan süreçler | Temp ya da AppData'dan başlatılmış `wscript`, `cscript`, `mshta`; madenci ikilileri |
 | `Run` / `RunOnce`, Policies `Run`, Winlogon `Shell` / `Userinit` | Betik yorumlayıcıları, `.vbs` / `.js` / `.bat` yükleri, gizli PowerShell |
+| Kullanıcı Winlogon `Shell`, `AppInit_DLLs`, IFEO `Debugger` | Değiştirilmiş kullanıcı kabuğu, enjekte DLL, ele geçirilmiş Görev Yöneticisi / Kayıt Defteri / cmd |
 | Başlangıç klasörleri (kullanıcı ve tüm kullanıcılar) | Betikler ve betiğe işaret eden kısayollar |
 | Zamanlanmış görevler | Aynı kurallar, Microsoft görevleri hariç |
 | Servisler | System32 dışındaki `ServiceDll`, ele geçirilmiş `DcomLaunch`, Temp ya da `Windows \` yolları |
@@ -90,6 +94,15 @@ silinmez. Windows'un kilitlediği dosya bir sonraki açılışta taşınır.
 
 
 ---
+
+
+### Betik Motoru Anahtarı
+
+Her VBS / JS solucanı `wscript.exe` üzerinden çalışır. **Betik Motorunu Kapat** tek bir kayıt
+değeriyle Windows Script Host'u kapatır; korumasız bir PC'de bile tıklanan kısayol hiçbir
+şey başlatmaz. Durum satırında **Betik Motoru : Açık / Kapalı** görünür. Meşru `.vbs`
+betikleri (bazı yazıcı kurulumları, kurumsal logon betikleri) de durur; bu yüzden isteğe
+bağlıdır, aynı menüden geri açılır.
 
 
 ## İsteğe Bağlı Arka Plan İzleyici
@@ -111,8 +124,8 @@ Menüden kurulur. Virüslü USB takıldığında Evet / Hayır sorusuyla temizle
 
 3. Ok tuşlarıyla gez, **Enter** ile seç, **Esc** ile çık.
 
-Yalnız çıkarılabilir USB sürücüler listelenir. Sistem, bulut ve boot / EFI bölümleri bilerek
-gizlenir.
+Çıkarılabilir USB sürücüler ve USB sabit diskler listelenir. Sistem sürücüsü, bulut ve
+boot / EFI bölümleri bilerek gizlenir.
 
 Düz bir `.bat` olduğu için **cmd** çalıştırır. İçeride Windows 7 ve sonrasında hazır gelen
 **Windows PowerShell 5.1** kullanılır. PowerShell 7 gerekmez, varsayılan kabuk değişmez.

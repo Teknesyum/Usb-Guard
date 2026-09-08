@@ -44,9 +44,12 @@ covers the older VBS and JS worms that spread the same way.
   launch `cmd`, `wscript`, or `mshta` are caught even when they are named like your files.
 
 - Moves your real files back from the hidden folder, whether the worm used the drive label,
-  `sysvolume\<label>`, or a blank-named folder.
+  `sysvolume\<label>`, `_`, a blank name, or a fake `recycle.bin`. A name clash at the root
+  gets a ` (2)` suffix, so nothing is overwritten or lost.
 
-- Deletes the payload and clears the System + Hidden attributes.
+- Moves the payload (hidden `.vbs` / `.js` / `.bat` / `.hta` / `.scr` files, and folder-icon
+  `.exe` mimics named after your hidden folders) to quarantine under
+  `%LOCALAPPDATA%\Usb-Guard`, then clears the System + Hidden attributes.
 
 
 ### Immunize The USB
@@ -75,6 +78,7 @@ What it looks at:
 | --- | --- |
 | Running processes | `wscript`, `cscript`, `mshta` launched from Temp or AppData; miner binaries |
 | `Run` / `RunOnce`, Policies `Run`, Winlogon `Shell` / `Userinit` | Script interpreters, `.vbs` / `.js` / `.bat` payloads, hidden PowerShell |
+| Per-user Winlogon `Shell`, `AppInit_DLLs`, IFEO `Debugger` | Replaced user shell, injected DLLs, hijacked Task Manager / Registry Editor / cmd |
 | Startup folders (user and all users) | Scripts, and shortcuts pointing at scripts |
 | Scheduled tasks | Same rules, Microsoft tasks excluded |
 | Services | `ServiceDll` outside System32, hijacked `DcomLaunch`, paths in Temp or `Windows \` |
@@ -90,6 +94,15 @@ deleted. A file that is locked by Windows is moved on the next reboot.
 
 
 ---
+
+
+### Script Engine Switch
+
+Every VBS / JS worm runs through `wscript.exe`. **Betik Motorunu Kapat** turns Windows
+Script Host off with one registry value, so a clicked shortcut launches nothing even on an
+unprotected PC. The status row shows **Betik Motoru : Açık / Kapalı**. Legitimate `.vbs`
+scripts (some printer installers, corporate logon scripts) stop too, so it is optional and
+can be switched back on from the same menu.
 
 
 ## Optional Background Watcher
@@ -111,8 +124,8 @@ to clean and immunize it. Nothing runs without your click. Uninstall from the sa
 
 3. Arrow keys to move, **Enter** to select, **Esc** to leave.
 
-Only removable USB drives are listed. System, cloud, and boot / EFI partitions are hidden on
-purpose.
+Removable USB drives and USB hard disks are listed. The system drive, cloud, and boot / EFI
+partitions are hidden on purpose.
 
 It is a plain `.bat`, so **cmd** runs it. Inside, it uses the **Windows PowerShell 5.1** that
 ships with every Windows 7 and later. No PowerShell 7, no changed default shell.
