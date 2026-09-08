@@ -1,0 +1,7 @@
+*.ps1
+asi.ps1
+usb-guard.ps1
+gen.ps1
+*.log
+Thumbs.db
+desktop.ini
