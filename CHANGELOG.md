@@ -1,6 +1,30 @@
 # Changelog
 
 
+## v1.13
+
+- **Machine-wide, not per-account.** Quarantine, the saved language and the installed copy
+  moved from `%LOCALAPPDATA%\Usb-Guard` to `C:\ProgramData\Usb-Guard`. An existing
+  per-account folder is moved over on the first run. Every account on the PC now sees the
+  same quarantine and the same installed program.
+
+- **The watcher works for every account.** It used to be a `HKCU\...\Run` entry, which only
+  covered the account that happened to be elevated when it was installed. It is now a
+  scheduled task named `UsbGuard`, registered for the built-in Users group with a logon
+  trigger, so it starts for whoever signs in. The old Run entry is removed on install and on
+  uninstall.
+
+- After a USB is cleaned, USB-Guard offers to copy itself onto that drive, so the next
+  infected PC can be treated by double-clicking the stick.
+
+- **The source is in the repository.** `src/usb-guard.ps1` and `src/pack.ps1` are committed;
+  the released `.bat` is what `pack.ps1` produces from that source, and it prints a SHA256
+  roundtrip check.
+
+- The update check no longer insists that a downloaded release contain `FromBase64String`,
+  so a future release can drop the embedded payload without stranding this version.
+
+
 ## v1.12
 
 - **The program speaks English.** On the first run it asks for a language, **1** for English

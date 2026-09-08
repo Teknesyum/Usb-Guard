@@ -52,7 +52,7 @@ covers the older VBS and JS worms that spread the same way.
 
 - Moves the payload (hidden `.vbs` / `.js` / `.bat` / `.hta` / `.scr` files, folder-icon
   `.exe` mimics named after your hidden folders, and double-extension fakes such as
-  `holiday.jpg.exe`) to quarantine under `%LOCALAPPDATA%\Usb-Guard`, then clears the
+  `holiday.jpg.exe`) to quarantine under `C:\ProgramData\Usb-Guard`, then clears the
   System + Hidden attributes.
 
 - Scans subfolders two levels deep, not only the root. Worms of the Jenxcus family drop a
@@ -99,7 +99,7 @@ What it looks at:
 
 Everything found is listed first. Nothing changes until you answer the yes / no prompt.
 On confirmation: processes are stopped, services and autostart entries removed, Explorer
-settings restored, and files **moved to quarantine** under `%LOCALAPPDATA%\Usb-Guard`, never
+settings restored, and files **moved to quarantine** under `C:\ProgramData\Usb-Guard`, never
 deleted. A file that is locked by Windows is moved on the next reboot.
 
 
@@ -126,8 +126,11 @@ can be switched back on from the same menu.
 ## Optional Background Watcher
 
 
-Install it from the menu. When an infected USB is plugged in, a Yes / No prompt asks whether
-to clean and immunize it. Nothing runs without your click. Uninstall from the same menu.
+Install it from the menu. It is registered as a scheduled task named `UsbGuard` with a logon
+trigger for the built-in Users group, so it covers every account on the computer, and it runs
+without administrator rights. When an infected USB is plugged in, a Yes / No prompt asks
+whether to clean and immunize it. Nothing runs without your click. Uninstall from the same
+menu.
 
 
 ---
@@ -149,6 +152,9 @@ The first screen holds cleaning, the PC scan, and the two install actions. Insta
 USB names the drive it will write to, so several plugged-in sticks are not a guess. The
 watcher, the script-engine switch, the USB execute switch, restore from quarantine, and the
 language switch live under the advanced submenu.
+
+After a drive is cleaned, USB-Guard offers to copy itself onto that drive, so you can carry
+it to the next infected computer.
 
 On launch USB-Guard compares its version with the latest GitHub release. A newer release is
 downloaded, swapped in place of the running `.bat`, and the program restarts. The version
@@ -178,6 +184,17 @@ ships with every Windows 7 and later. No PowerShell 7, no changed default shell.
 
 - **Not an antivirus.** It knows the USB worm families and their leftovers. Keep a real
   antivirus for everything else.
+
+
+---
+
+
+## Building It Yourself
+
+
+The program is `src/usb-guard.ps1`, plain PowerShell. `src/pack.ps1` gzips it, embeds it in
+`USB-Guard.bat` as base64, unpacks it again and compares the SHA256, so the released `.bat`
+is reproducible from the source in this repository.
 
 
 ---

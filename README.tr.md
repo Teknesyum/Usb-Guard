@@ -53,7 +53,7 @@ VBS ve JS solucanlarını da kapsar.
 
 - Yükü (gizli `.vbs` / `.js` / `.bat` / `.hta` / `.scr` dosyaları, gizli klasörlerinle aynı
   adı taşıyan klasör-ikonlu `.exe` taklitleri ve `tatil.jpg.exe` gibi çift uzantılı sahteler)
-  `%LOCALAPPDATA%\Usb-Guard` altında karantinaya taşır, ardından Sistem + Gizli
+  `C:\ProgramData\Usb-Guard` altında karantinaya taşır, ardından Sistem + Gizli
   özniteliklerini kaldırır.
 
 - Yalnız kökü değil, iki seviye derinlikte alt klasörleri de tarar. Jenxcus ailesindeki
@@ -100,7 +100,7 @@ Baktığı yerler:
 
 Bulunan her şey önce listelenir. **E / H** ile yanıt vermeden hiçbir şey değişmez. Onayda:
 süreçler durdurulur, servisler ve otomatik başlatma kayıtları kaldırılır, Explorer ayarları
-geri alınır ve dosyalar `%LOCALAPPDATA%\Usb-Guard` altında **karantinaya taşınır**, asla
+geri alınır ve dosyalar `C:\ProgramData\Usb-Guard` altında **karantinaya taşınır**, asla
 silinmez. Windows'un kilitlediği dosya bir sonraki açılışta taşınır.
 
 
@@ -151,6 +151,9 @@ yazacağı sürücünün adını gösterir; birden fazla USB takılıysa hangisi
 edilmez. İzleyici, betik motoru anahtarı, USB'den çalıştırma anahtarı ve karantinadan geri
 alma ve dil seçimi **Gelişmiş Seçenekler** altındadır.
 
+Bir sürücü temizlendikten sonra USB-Guard kendini o sürücüye kopyalamayı teklif eder; böylece
+sıradaki virüslü bilgisayara elinde taşırsın.
+
 Açılışta USB-Guard sürümünü GitHub'daki son yayınla karşılaştırır. Yeni sürüm varsa indirir,
 çalışan `.bat` ile değiştirir ve yeniden başlar. Sürüm denetimi, PC taraması ve antivirüs
 sorgusu arka planda çalışır: menü yaklaşık bir saniyede hazır olur, durum satırları
@@ -178,6 +181,17 @@ Düz bir `.bat` olduğu için **cmd** çalıştırır. İçeride Windows 7 ve so
 
 - **Antivirüs değildir.** USB solucan ailelerini ve kalıntılarını tanır. Gerisi için gerçek
   bir antivirüs kullan.
+
+
+---
+
+
+## Kendin Derlemek İstersen
+
+
+Program `src/usb-guard.ps1`, düz PowerShell. `src/pack.ps1` onu gzip'ler, `USB-Guard.bat`
+içine base64 olarak gömer, geri açar ve SHA256'yı karşılaştırır; yayınlanan `.bat` bu
+depodaki kaynaktan yeniden üretilebilir.
 
 
 ---
