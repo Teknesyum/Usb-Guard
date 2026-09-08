@@ -1,6 +1,19 @@
 # Changelog
 
 
+## v1.16
+
+- **The language screen takes the arrow keys.** Up and down move the highlight, Enter
+  confirms, and `1` / `2` still pick English or Turkish straight away, the way the rest of
+  the menus work.
+
+- The copy of `USB-Guard.bat` in the repository is now byte-identical to the released file.
+  Git was rewriting its line endings on commit, so its SHA256 did not match the one in the
+  release notes.
+
+- The released file is on VirusTotal and clean; the report is linked in the README.
+
+
 ## v1.15
 
 - **The scan showed one finding when it had found several.** The result of the scan step was

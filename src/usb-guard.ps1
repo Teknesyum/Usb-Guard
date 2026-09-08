@@ -1,7 +1,7 @@
 ﻿param([switch]$Watch,[string]$Drive,[switch]$Bg)
 $ErrorActionPreference = 'SilentlyContinue'
 try{ [Console]::OutputEncoding = [Text.Encoding]::UTF8 }catch{}
-$VER = '1.15'
+$VER = '1.16'
 $ACC = 'Cyan'
 $ACC2 = 'Magenta'
 $W = 60
@@ -1439,17 +1439,26 @@ function Restore-Menu {
 function Choose-Lang {
     Clear-Host; Print-Banner
     T '  Language / Dil' $ACC2; NL
-    T '    1   English' 'White'
-    NL
-    T '    2   Türkçe' 'White'
-    NL
-    T '  Press 1 or 2   /   1 ya da 2 tuşuna bas' 'DarkGray'
+    $codes=@('en','tr'); $names=@('English','Türkçe')
+    $i=if($script:LANG -eq 'en'){ 0 } else { 1 }
+    $top=[Console]::CursorTop
     try{ [Console]::CursorVisible=$false }catch{}
     while($true){
+        [Console]::SetCursorPosition(0,$top)
+        for($n=0;$n -lt $codes.Count;$n++){
+            $line=("{0}  {1}" -f ($n+1),$names[$n])
+            if($n -eq $i){ Row ('  > '+$line) 'Black' $ACC } else { Row ('    '+$line) 'Gray' }
+            Row ''
+        }
+        Row '  1/2 or arrows, Enter   /   1/2 ya da oklar, Enter' 'DarkGray'
         $k=[Console]::ReadKey($true)
         $ch="$($k.KeyChar)"
-        if($ch -eq '1'){ Set-Lang 'en'; Save-Lang 'en'; return }
-        if($ch -eq '2'){ Set-Lang 'tr'; Save-Lang 'tr'; return }
+        if($ch -eq '1'){ $i=0 }
+        elseif($ch -eq '2'){ $i=1 }
+        elseif($k.Key -eq 'UpArrow' -or $k.Key -eq 'DownArrow'){ $i=($i+1)%$codes.Count; continue }
+        elseif($k.Key -ne 'Enter'){ continue }
+        try{ [Console]::CursorVisible=$true }catch{}
+        Set-Lang $codes[$i]; Save-Lang $codes[$i]; return
     }
 }
 function Run-Menu {
