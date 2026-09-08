@@ -127,6 +127,7 @@ $STRTR = @{
  'scan.note2'   = "  noktalarına bakar (süreçler, Run kayıtları, görevler, servisler, başlangıç"
  'scan.note3'   = "  klasörleri). Tam bir virüs taraması değildir; antivirüsünün yerini tutmaz."
  'scan.found'   = "  {0} şüpheli kalıntı bulundu:"
+ 'scan.found1'  = "  1 şüpheli kalıntı bulundu:"
  'scan.ask'     = "  Temizleyeyim mi? Kayıtlar silinir, dosyalar karantinaya taşınır. (E/H): "
  'scan.cancel'  = "  İptal edildi. Hiçbir şey değiştirilmedi."
  'scan.left'    = "  Kalan: {0} (tekrar tara)"
@@ -172,6 +173,7 @@ $STRTR = @{
  'st.scanning'  = "Taranıyor..."
  'st.pcclean'   = "Temiz"
  'st.pcdirty'   = "{0} Kalıntı - Temizlik Önerilir"
+ 'st.pcdirty1'  = "1 Kalıntı - Temizlik Önerilir"
  'st.avon'      = "Koruma Açık"
  'st.avoff'     = "Koruma Kapalı"
  'st.avna'      = "Bilinmiyor"
@@ -333,6 +335,7 @@ $STREN = @{
  'scan.note2'   = "  uses (processes, Run keys, tasks, services, startup folders). It is not"
  'scan.note3'   = "  a full virus scan and does not replace your antivirus."
  'scan.found'   = "  {0} suspicious remnants found:"
+ 'scan.found1'  = "  1 suspicious remnant found:"
  'scan.ask'     = "  Clean them? Registry entries are deleted, files go to quarantine. (Y/N): "
  'scan.cancel'  = "  Cancelled. Nothing was changed."
  'scan.left'    = "  Remaining: {0} (scan again)"
@@ -378,6 +381,7 @@ $STREN = @{
  'st.scanning'  = "Scanning..."
  'st.pcclean'   = "Clean"
  'st.pcdirty'   = "{0} Remnants - Cleanup Recommended"
+ 'st.pcdirty1'  = "1 Remnant - Cleanup Recommended"
  'st.avon'      = "Protection On"
  'st.avoff'     = "Protection Off"
  'st.avna'      = "Unknown"
@@ -818,13 +822,40 @@ function Find-Tasks($f){
         }
     }
 }
+function Bin-Path($s){
+    $p="$s"
+    if(-not $p){ return '' }
+    $p=$p.Trim()
+    $p=$p -replace '^\\\?\?\\',''
+    $p=$p -replace '^\\SystemRoot\\',"$env:SystemRoot\"
+    if($p -match '%'){ $p=[Environment]::ExpandEnvironmentVariables($p) }
+    if($p.StartsWith('"')){
+        $e=$p.IndexOf('"',1)
+        if($e -gt 0){ return $p.Substring(1,$e-1) }
+        return $p.Trim('"')
+    }
+    $m=[regex]::Match($p,'(?i)^.*?\.(exe|dll|sys|scr|com)\b')
+    if($m.Success){ return $m.Value }
+    return ($p -split '\s+')[0]
+}
+function Test-Trusted($s){
+    try{
+        $p=Bin-Path $s
+        if(-not $p -or -not (Test-Path -LiteralPath $p -PathType Leaf)){ return $false }
+        $sig=Get-AuthenticodeSignature -LiteralPath $p -EA SilentlyContinue
+        return ($sig -and $sig.Status -eq 'Valid')
+    }catch{ return $false }
+}
 function Find-Services($f){
     $svcRx='(?i)\\Temp\\|\\Windows \\|\\u\d{6}\.(dll|dat)|wsvcz|svctrl64|svcinsty64|xmrig|\.(vbs|js|bat|cmd)\b'
     $dllRx='(?i)\\Temp\\|\\AppData\\|\\ProgramData\\|\\Users\\|\\Windows \\|\\u\d{6}\.(dll|dat)|wsvcz'
     foreach($s in Get-ChildItem 'HKLM:\SYSTEM\CurrentControlSet\Services' -EA SilentlyContinue){
         $ip="$((Get-ItemProperty -Path $s.PSPath -EA SilentlyContinue).ImagePath)"
         $dll="$((Get-ItemProperty -Path (Join-Path $s.PSPath 'Parameters') -EA SilentlyContinue).ServiceDll)"
-        if($ip -match $svcRx -or $dll -match $dllRx){ Add-Find $f @{Type='Svc';Name=$s.PSChildName;Desc=(SF 'fnd.svc' $s.PSChildName);Detail=(($ip,$dll) -join ' | ')} }
+        $hit=$false
+        if($ip -match $svcRx -and -not (Test-Trusted $ip)){ $hit=$true }
+        if($dll -match $dllRx -and -not (Test-Trusted $dll)){ $hit=$true }
+        if($hit){ Add-Find $f @{Type='Svc';Name=$s.PSChildName;Desc=(SF 'fnd.svc' $s.PSChildName);Detail=(@($ip,$dll) | Where-Object { $_ }) -join ' | '} }
     }
     $dc="$((Get-ItemProperty 'HKLM:\SYSTEM\CurrentControlSet\Services\DcomLaunch\Parameters' -EA SilentlyContinue).ServiceDll)"
     if($dc -and $dc -notmatch '(?i)\\system32\\rpcss\.dll$'){ Add-Find $f @{Type='SvcDll';Name='DcomLaunch';Restore='%SystemRoot%\system32\rpcss.dll';Desc=("DcomLaunch ServiceDll = {0}" -f $dc)} }
@@ -931,7 +962,7 @@ function Scan-Pc {
         T (S 'scan.note3') 'DarkGray'
         return
     }
-    T (SF 'scan.found' $found.Count) 'Red'; NL
+    T $(if($found.Count -eq 1){ S 'scan.found1' } else { SF 'scan.found' $found.Count }) 'Red'; NL
     foreach($x in $found){
         TN ("    [{0,-6}] " -f $x.Type) 'DarkGray'; T $x.Desc 'Yellow'
         if($x.Detail -and $x.Detail -ne $x.Desc){ $d="$($x.Detail)"; if($d.Length -gt 66){ $d=$d.Substring(0,66)+'..' }; T ("             {0}" -f $d) 'Gray' }
@@ -1087,7 +1118,7 @@ function Print-Status($drives){
     switch -regex ("$($script:upd)"){ '^ok' { T (S 'st.uptodate') 'Green' } '^new (.+)' { T (SF 'st.newver' $matches[1],$repo) 'Yellow' } '^err' { T (S 'st.upderr') 'DarkGray' } default { T (S 'st.checking') 'DarkGray' } }
     NL
     LB 'st.pc' $script:wSt
-    if(-not $script:scanned){ T (S 'st.scanning') 'DarkGray' } elseif($script:pcFound.Count -eq 0){ T (S 'st.pcclean') 'Green' } else { T (SF 'st.pcdirty' $script:pcFound.Count) 'Red' }
+    if(-not $script:scanned){ T (S 'st.scanning') 'DarkGray' } elseif($script:pcFound.Count -eq 0){ T (S 'st.pcclean') 'Green' } else { T $(if($script:pcFound.Count -eq 1){ S 'st.pcdirty1' } else { SF 'st.pcdirty' $script:pcFound.Count }) 'Red' }
     NL
     LB 'st.av' $script:wSt
     $dv="$($script:def)"; $dn=''; if($dv -match '\|'){ $a=$dv.Split('|',2); $dv=$a[0]; $dn=$a[1] }

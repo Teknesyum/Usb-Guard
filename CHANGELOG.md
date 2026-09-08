@@ -24,6 +24,14 @@
 - The update check no longer insists that a downloaded release contain `FromBase64String`,
   so a future release can drop the embedded payload without stranding this version.
 
+- **Fewer false alarms in the PC scan.** A service whose binary sits under a temporary folder
+  is no longer reported when that binary carries a valid Authenticode signature. CPU-Z, which
+  drops a signed driver into `C:\Windows\Temp` while it runs, was being listed as a worm
+  remnant.
+
+- Scan wording: "1 suspicious remnant found", not "1 suspicious remnants found". A service
+  finding no longer ends with a dangling `|` when it has no `ServiceDll`.
+
 
 ## v1.12
 
