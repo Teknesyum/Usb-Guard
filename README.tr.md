@@ -190,6 +190,10 @@ Düz bir `.bat` olduğu için **cmd** çalıştırır. İçeride Windows 7 ve so
 - **Doğrulanabilir.** Her yayın notunda dosyanın SHA256'sı yazar. Çalıştırmadan önce
   `Get-FileHash .\USB-Guard.bat -Algorithm SHA256` ile karşılaştır.
 
+- **Taranmış.** Yayınlanan dosya VirusTotal'da, temiz:
+  [2d5c45b6…f368 raporu](https://www.virustotal.com/gui/file/2d5c45b642671c465f9d2cea945b693e61003b5fa2f5054a60491c7a9374f368).
+  Linkteki hash yayın dosyasının hash'idir.
+
 - **Belgeli.** [SECURITY.md](SECURITY.md) programın yaptığı her ayrıcalıklı işi, gerekçesini
   ve nasıl geri alınacağını tablo hâlinde listeler.
 

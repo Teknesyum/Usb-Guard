@@ -194,6 +194,10 @@ ships with every Windows 7 and later. No PowerShell 7, no changed default shell.
 - **Verifiable.** Every release note carries the SHA256 of the file. Compare it with
   `Get-FileHash .\USB-Guard.bat -Algorithm SHA256` before you run it.
 
+- **Scanned.** The released file is on VirusTotal, clean:
+  [report for 2d5c45b6…f368](https://www.virustotal.com/gui/file/2d5c45b642671c465f9d2cea945b693e61003b5fa2f5054a60491c7a9374f368).
+  The hash in that link is the hash of the release asset.
+
 - **Documented.** [SECURITY.md](SECURITY.md) lists every privileged action the program
   takes, why it takes it, and how to undo it.
 
