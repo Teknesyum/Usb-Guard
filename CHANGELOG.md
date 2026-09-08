@@ -1,6 +1,22 @@
 # Changelog
 
 
+## v1.8
+
+- Update check on launch: the latest GitHub release tag is compared with the running version.
+  A newer release is downloaded from the release asset, verified, swapped in place of the
+  running `.bat` (and the installed copy), and USB-Guard restarts. The status row shows
+  **Sürüm : v1.8 Güncel / Denetlenemedi**. This is the only network call the program makes.
+
+- **F1** shows a plain-language explanation of the highlighted menu item; **G** opens the
+  GitHub page and **S** the sponsor page in the browser (the console cannot make links clickable).
+
+- Everything is centered as a block: a left margin computed from the window width shifts the
+  banner, status rows, menu and hints together.
+
+- Window height grows to fit the content instead of cutting the banner off; width stays 80.
+
+
 ## v1.7
 
 - Turkish characters render correctly: the launcher now writes the embedded script as UTF-8

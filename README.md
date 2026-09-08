@@ -122,7 +122,12 @@ to clean and immunize it. Nothing runs without your click. Uninstall from the sa
 
 2. Double-click it. Windows asks for admin, which the ACL locks and the PC cleanup need.
 
-3. Arrow keys to move, **Enter** to select, **Esc** to leave.
+3. Arrow keys to move, **Enter** to select, **F1** to read what the highlighted item does,
+   **G** to open GitHub, **Esc** to leave.
+
+On launch USB-Guard compares its version with the latest GitHub release. A newer release is
+downloaded, swapped in place of the running `.bat`, and the program restarts. The status row
+shows **Sürüm : v1.8 Güncel**.
 
 Removable USB drives and USB hard disks are listed. The system drive, cloud, and boot / EFI
 partitions are hidden on purpose.
@@ -142,7 +147,8 @@ ships with every Windows 7 and later. No PowerShell 7, no changed default shell.
 - **Reversible.** Immunity is a set of folders and ACLs the owner can remove. The PC cleanup
   quarantines instead of deleting.
 
-- **Local.** It talks to no network.
+- **Local.** Its only network call is the version check against GitHub on launch; no data
+  leaves the computer.
 
 - **Not an antivirus.** It knows the USB worm families and their leftovers. Keep a real
   antivirus for everything else.

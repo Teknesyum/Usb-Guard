@@ -122,7 +122,11 @@ Menüden kurulur. Virüslü USB takıldığında Evet / Hayır sorusuyla temizle
 
 2. Çift tıkla. Windows yönetici onayı ister; ACL kilitleri ve PC temizliği için gerekli.
 
-3. Ok tuşlarıyla gez, **Enter** ile seç, **Esc** ile çık.
+3. Ok tuşlarıyla gez, **Enter** ile seç, **F1** ile seçili maddenin ne yaptığını oku,
+   **G** ile GitHub'ı aç, **Esc** ile çık.
+
+Açılışta USB-Guard sürümünü GitHub'daki son yayınla karşılaştırır. Yeni sürüm varsa indirir,
+çalışan `.bat` ile değiştirir ve yeniden başlar. Durum satırında **Sürüm : v1.8 Güncel** görünür.
 
 Çıkarılabilir USB sürücüler ve USB sabit diskler listelenir. Sistem sürücüsü, bulut ve
 boot / EFI bölümleri bilerek gizlenir.
@@ -142,7 +146,7 @@ Düz bir `.bat` olduğu için **cmd** çalıştırır. İçeride Windows 7 ve so
 - **Geri alınabilir.** Aşı, sahibin kaldırabileceği klasörler ve ACL'lerdir. PC temizliği
   silmek yerine karantinaya taşır.
 
-- **Yerel.** Ağla konuşmaz.
+- **Yerel.** Tek ağ çağrısı açılıştaki GitHub sürüm denetimidir; bilgisayardan veri çıkmaz.
 
 - **Antivirüs değildir.** USB solucan ailelerini ve kalıntılarını tanır. Gerisi için gerçek
   bir antivirüs kullan.
