@@ -1,6 +1,17 @@
 # Changelog
 
 
+## v1.6
+
+- Bigger interface: the console is switched to Consolas 20 on open, the window grows to
+  62×40 and stays centered.
+
+- A blank line between every menu item, status row and step so the screen reads easily.
+
+- Shorter menu labels: **Tumunu Duzelt**, **Duzelt -> D: LABEL**, **Izleyici Kur / Kaldir**,
+  **USB-Guardı Usb'ye Kopyala**, **USB-Guardı C:'ye Kopyala**.
+
+
 ## v1.5
 
 - The menu now scans the PC on open and shows **Bu PC : Temiz** or **N Kalıntı - Temizlik
