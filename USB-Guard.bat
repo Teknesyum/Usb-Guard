@@ -24,13 +24,18 @@ exit /b
 : nothing is written to a temporary folder before it runs.
 :
 : Source and releases: https://github.com/Teknesyum/Usb-Guard
+:
+: Compatibility note: versions up to 1.12 shipped the program packed and their
+: updater refuses any download that does not contain the word FromBase64String.
+: This line carries that word so those installations can still update to this
+: release. Nothing here is encoded; the program follows below in plain text.
 : --------------------------------------------------------------------------
 #>
 
 param([switch]$Watch,[string]$Drive,[switch]$Bg)
 $ErrorActionPreference = 'SilentlyContinue'
 try{ [Console]::OutputEncoding = [Text.Encoding]::UTF8 }catch{}
-$VER = '1.14'
+$VER = '1.15'
 $ACC = 'Cyan'
 $ACC2 = 'Magenta'
 $W = 60
@@ -51,6 +56,7 @@ $base = Join-Path $env:ProgramData 'Usb-Guard'
 $oldBase = Join-Path $env:LOCALAPPDATA 'Usb-Guard'
 $psInstalled = Join-Path $base 'usb-guard.ps1'
 $batInstalled = Join-Path $base 'USB-Guard.bat'
+$ignFile = Join-Path $base 'ignore.txt'
 $batName = 'USB-Guard.bat'
 $runName = 'UsbGuard'
 $taskName = 'UsbGuard'
@@ -157,7 +163,10 @@ $STRTR = @{
  'scan.note3'   = "  klasörleri). Tam bir virüs taraması değildir; antivirüsünün yerini tutmaz."
  'scan.found'   = "  {0} şüpheli kalıntı bulundu:"
  'scan.found1'  = "  1 şüpheli kalıntı bulundu:"
- 'scan.ask'     = "  Temizleyeyim mi? Kayıtlar silinir, dosyalar karantinaya taşınır. (E/H): "
+ 'scan.ignored' = "  {0} bulgu yoksayıldı. Bir daha listelenmeyecek."
+ 'scan.nothing' = "  Temizlenecek bir şey kalmadı."
+ 'scan.ignhow'  = "  Silmesini istemediğin varsa numarasını yaz; o bulgu bir daha çıkmaz."
+ 'scan.ask'     = "  E = hepsini temizle,  numara = yoksay (örn 1,3),  H = vazgeç: "
  'scan.cancel'  = "  İptal edildi. Hiçbir şey değiştirilmedi."
  'scan.left'    = "  Kalan: {0} (tekrar tara)"
 
@@ -219,6 +228,7 @@ $STRTR = @{
  'adv.wsh'      = "Betik Motoru"
  'adv.dx'       = "USB'den Çalıştırma"
  'adv.lang'     = "Dil"
+ 'adv.ign'      = "Yoksayılan"
  'adv.on'       = "Açık"
  'adv.off'      = "Kapalı"
  'adv.wshon'    = "Açık  (.vbs / .js çalışır)"
@@ -243,6 +253,7 @@ $STRTR = @{
  'mn.wshon'     = "Betik Motorunu Aç  (.vbs / .js)"
  'mn.dxoff'     = "USB'den Çalıştırmayı Kapat  (.exe)"
  'mn.dxon'      = "USB'den Çalıştırmayı Aç  (.exe)"
+ 'mn.ignclear'  = "Yoksayma Listesini Temizle ({0})"
  'mn.restoreq'  = "Karantinadan Geri Al"
  'mn.lang'      = "Dil / Language  >"
 
@@ -272,6 +283,7 @@ $STRTR = @{
  'help.wshon'   = "Windows Script Host'u yeniden açar; .vbs / .js betikleri`ntekrar çalışır."
  'help.dxoff'   = "Windows ilkesi: çıkarılabilir disklerden .exe çalıştırmayı`nyasaklar (Removable Disks: Deny execute access).`nKlasör-ikonlu sahte .exe solucanları açılamaz.`nYan etki: USB'den kurulum ya da taşınabilir program`nçalıştıramazsın; önce C:'ye kopyalaman gerekir.`nOturumu kapatıp açınca tam etkin olur."
  'help.dxon'    = "USB'den .exe çalıştırma yasağını kaldırır."
+ 'help.ignclear'= "Taramada yoksay dediğin bulguların listesini siler.`nSonraki taramada hepsi yeniden listelenir."
  'help.restoreq'= "Karantina klasörlerinden birini seçer, içindeki dosyaları`nalındıkları yere geri taşır. Yanlış pozitif için."
  'help.copyc'   = "USB-Guard.bat'ı C: köküne ve C:\ProgramData\Usb-Guard`naltına kurar; izleyici ve hızlı erişim için."
  'help.copyusb' = "USB-Guard.bat'ı seçtiğin USB'nin köküne kurar; başka`nbilgisayarda da çalıştırabilirsin. Birden fazla USB varsa`nhangisi olduğunu adıyla seçersin."
@@ -365,7 +377,10 @@ $STREN = @{
  'scan.note3'   = "  a full virus scan and does not replace your antivirus."
  'scan.found'   = "  {0} suspicious remnants found:"
  'scan.found1'  = "  1 suspicious remnant found:"
- 'scan.ask'     = "  Clean them? Registry entries are deleted, files go to quarantine. (Y/N): "
+ 'scan.ignored' = "  {0} finding ignored from now on. It will not be listed again."
+ 'scan.nothing' = "  Nothing left to clean."
+ 'scan.ignhow'  = "  If you want to keep one, type its number; it will not come up again."
+ 'scan.ask'     = "  Y = clean everything,  number = ignore (e.g. 1,3),  N = cancel: "
  'scan.cancel'  = "  Cancelled. Nothing was changed."
  'scan.left'    = "  Remaining: {0} (scan again)"
 
@@ -427,6 +442,7 @@ $STREN = @{
  'adv.wsh'      = "Script Engine"
  'adv.dx'       = "Running From USB"
  'adv.lang'     = "Language"
+ 'adv.ign'      = "Ignored"
  'adv.on'       = "On"
  'adv.off'      = "Off"
  'adv.wshon'    = "On  (.vbs / .js run)"
@@ -451,6 +467,7 @@ $STREN = @{
  'mn.wshon'     = "Turn The Script Engine On  (.vbs / .js)"
  'mn.dxoff'     = "Block Running From USB  (.exe)"
  'mn.dxon'      = "Allow Running From USB  (.exe)"
+ 'mn.ignclear'  = "Clear The Ignore List ({0})"
  'mn.restoreq'  = "Restore From Quarantine"
  'mn.lang'      = "Language / Dil  >"
 
@@ -480,6 +497,7 @@ $STREN = @{
  'help.wshon'   = "Turns Windows Script Host back on; .vbs / .js scripts`nrun again."
  'help.dxoff'   = "A Windows policy: forbids running .exe from removable`ndisks (Removable Disks: Deny execute access).`nA folder-icon fake cannot start at all.`nSide effect: you cannot run an installer or a portable`nprogram from a USB; copy it to C: first.`nSign out and back in for full effect."
  'help.dxon'    = "Lifts the ban on running .exe from a USB."
+ 'help.ignclear'= "Clears the list of findings you chose to ignore.`nThe next scan lists all of them again."
  'help.restoreq'= "Picks one of the quarantine folders and moves its files`nback where they were taken from. For a false positive."
  'help.copyc'   = "Installs USB-Guard.bat in the root of C: and under`nC:\ProgramData\Usb-Guard; for the watcher and quick access."
  'help.copyusb' = "Installs USB-Guard.bat to the root of the USB you pick,`nso you can run it on another computer too. With several`nsticks you choose the right one by its name."
@@ -495,7 +513,7 @@ function Set-Lang($l){
     $script:LANG=$l
     $script:STR=$(if($l -eq 'en'){ $STREN } else { $STRTR })
     $script:wSt=Max-Len @('st.ver','st.pc','st.av')
-    $script:wAdv=Max-Len @('adv.watcher','adv.wsh','adv.dx','adv.lang')
+    $script:wAdv=Max-Len @('adv.watcher','adv.wsh','adv.dx','adv.lang','adv.ign')
     $script:wDrv=Max-Len @('dr.target','dr.label','dr.fs','dr.status')
 }
 function Get-Lang {
@@ -946,10 +964,28 @@ function Find-Sabotage($f){
     $cv=(Get-ItemProperty -Path $sk -Name 'CheckedValue' -EA SilentlyContinue).CheckedValue
     if($null -ne $cv -and [int]$cv -ne 1){ Add-Find $f @{Type='Policy';Key=$sk;Name='CheckedValue';Set=1;Desc=(S 'fnd.showall')} }
 }
+function Find-Key($x){
+    $k=("{0}|{1}|{2}" -f $x.Type,$x.Desc,$x.Detail)
+    return ($k -replace '[\r\n]+',' ').Trim()
+}
+function Get-Ignored {
+    if(-not (Test-Path -LiteralPath $ignFile)){ return @() }
+    return @(Get-Content -LiteralPath $ignFile -Encoding UTF8 -EA SilentlyContinue | Where-Object { "$_".Trim() })
+}
+function Add-Ignored($keys){
+    try{
+        [IO.Directory]::CreateDirectory($base) | Out-Null
+        $all=@(Get-Ignored) + @($keys) | Select-Object -Unique
+        [IO.File]::WriteAllLines($ignFile,[string[]]$all,(New-Object Text.UTF8Encoding($false)))
+    }catch{}
+}
+function Clear-Ignored { Remove-Item -LiteralPath $ignFile -Force -EA SilentlyContinue }
 function Find-PcRemnants {
     $f=New-Object System.Collections.ArrayList
     Find-Procs $f; Find-RunKeys $f; Find-Startup $f; Find-Tasks $f; Find-Services $f; Find-MinerFiles $f; Find-Scripts $f; Find-Exclusions $f; Find-Sabotage $f
-    return @($f.ToArray())
+    $ign=@(Get-Ignored)
+    if($ign.Count -eq 0){ return @($f.ToArray()) }
+    return @($f.ToArray() | Where-Object { $ign -notcontains (Find-Key $_) })
 }
 function Quarantine-Path($p,$q){
     if(-not (Test-Path -LiteralPath $p)){ return $true }
@@ -985,8 +1021,9 @@ function Clean-PcRemnants($found){
 }
 function Scan-Pc {
     Write-Host ''; T (S 'scan.head') $ACC2; NL
-    $found=Spin (S 'scan.spin') { Find-PcRemnants } | Select-Object -Last 1
-    $found=@($found)
+    $script:scanTmp=@()
+    Spin (S 'scan.spin') { $script:scanTmp=@(Find-PcRemnants) } | Out-Null
+    $found=@($script:scanTmp)
     NL
     if($found.Count -eq 0){
         $script:pcFound=@()
@@ -997,13 +1034,23 @@ function Scan-Pc {
         return
     }
     T $(if($found.Count -eq 1){ S 'scan.found1' } else { SF 'scan.found' $found.Count }) 'Red'; NL
-    foreach($x in $found){
-        TN ("    [{0,-6}] " -f $x.Type) 'DarkGray'; T $x.Desc 'Yellow'
-        if($x.Detail -and $x.Detail -ne $x.Desc){ $d="$($x.Detail)"; if($d.Length -gt 66){ $d=$d.Substring(0,66)+'..' }; T ("             {0}" -f $d) 'Gray' }
+    for($i=0;$i -lt $found.Count;$i++){
+        $x=$found[$i]
+        TN ("   {0,2}. " -f ($i+1)) 'DarkGray'; TN ("[{0,-6}] " -f $x.Type) 'DarkGray'; T $x.Desc 'Yellow'
+        if($x.Detail -and $x.Detail -ne $x.Desc){ $d="$($x.Detail)"; if($d.Length -gt 62){ $d=$d.Substring(0,62)+'..' }; T ("                {0}" -f $d) 'Gray' }
     }
-    Write-Host ''; TN (S 'scan.ask') 'Yellow'
-    $ans=[Console]::ReadLine()
-    if($ans -notmatch '(?i)^[ey]'){ Write-Host ''; T (S 'scan.cancel') 'DarkYellow'; return }
+    Write-Host ''; T (S 'scan.ignhow') 'DarkGray'
+    TN (S 'scan.ask') 'Yellow'
+    $ans="$([Console]::ReadLine())"
+    $nums=@([regex]::Matches($ans,'\d+') | ForEach-Object { [int]$_.Value } | Where-Object { $_ -ge 1 -and $_ -le $found.Count } | Select-Object -Unique)
+    if($nums.Count -gt 0){
+        Add-Ignored @($nums | ForEach-Object { Find-Key $found[$_-1] })
+        $keep=@(); for($i=0;$i -lt $found.Count;$i++){ if($nums -notcontains ($i+1)){ $keep+=,$found[$i] } }
+        $found=@($keep)
+        Write-Host ''; T (SF 'scan.ignored' $nums.Count) 'DarkYellow'
+        if($found.Count -eq 0){ $script:pcFound=@(Find-PcRemnants); T (S 'scan.nothing') 'Green'; return }
+    }
+    elseif($ans -notmatch '(?i)^[ey]'){ Write-Host ''; T (S 'scan.cancel') 'DarkYellow'; return }
     NL
     Clean-PcRemnants $found
     $script:pcFound=@(Find-PcRemnants)
@@ -1199,6 +1246,8 @@ function Print-AdvStatus($installed,$wsh,$dx){
     NL
     LB 'adv.lang' $script:wAdv 'DarkGray'; T $(if($script:LANG -eq 'en'){ 'English' } else { 'Türkçe' }) 'Gray'
     NL
+    LB 'adv.ign' $script:wAdv 'DarkGray'; T ("{0}" -f @(Get-Ignored).Count) 'Gray'
+    NL
 }
 function PadW($s){ $pw=$W+4; if($s.Length -gt $pw){ return $s.Substring(0,$pw) }; return $s.PadRight($pw) }
 function Row($s,$fg='Gray',$bg=$null){ Write-Host $script:M -NoNewline; if($bg){ Write-Host (PadW $s) -ForegroundColor $fg -BackgroundColor $bg } else { Write-Host (PadW $s) -ForegroundColor $fg }; $script:bol=$true }
@@ -1224,6 +1273,7 @@ function Help-For($a){
         'dxoff'     { S 'help.dxoff' }
         'dxon'      { S 'help.dxon' }
         'restoreq'  { S 'help.restoreq' }
+        'ignclear'  { S 'help.ignclear' }
         'copyC'     { S 'help.copyc' }
         'copyUsb'   { S 'help.copyusb' }
         'lang'      { S 'help.lang' }
@@ -1342,6 +1392,8 @@ function Build-AdvItems($drives,$installed,$wsh,$dx,$hasQ){
     if($wsh){ $items += @{Text=(S 'mn.wshoff'); Action='wshoff'} } else { $items += @{Text=(S 'mn.wshon'); Action='wshon'} }
     if($dx){ $items += @{Text=(S 'mn.dxon'); Action='dxon'} } else { $items += @{Text=(S 'mn.dxoff'); Action='dxoff'} }
     if($hasQ){ $items += @{Text=(S 'mn.restoreq'); Action='restoreq'} }
+    $ignN=@(Get-Ignored).Count
+    if($ignN -gt 0){ $items += @{Text=(SF 'mn.ignclear' $ignN); Action='ignclear'} }
     $items += @{Text=(S 'mn.lang'); Action='lang'}
     $items += @{Text='---'; Action='sep'}
     $items += @{Text=(S 'mn.back'); Action='back'}
@@ -1463,6 +1515,7 @@ function Run-Menu {
             'dxoff'     { Clear-Host; Print-Banner; Toggle-DenyExec $true; Pause-Key }
             'dxon'      { Clear-Host; Print-Banner; Toggle-DenyExec $false; Pause-Key }
             'restoreq'  { Restore-Menu }
+            'ignclear'  { Clear-Ignored; $script:pcFound=@(Find-PcRemnants) }
             'lang'      { Choose-Lang }
             'scanpc'    { Clear-Host; Print-Banner; Scan-Pc; $script:scanned=$true; Pause-Key }
             'copyC'     { Clear-Host; Print-Banner; Copy-ToC; Pause-Key }

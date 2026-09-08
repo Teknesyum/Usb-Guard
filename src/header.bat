@@ -24,5 +24,10 @@ exit /b
 : nothing is written to a temporary folder before it runs.
 :
 : Source and releases: https://github.com/Teknesyum/Usb-Guard
+:
+: Compatibility note: versions up to 1.12 shipped the program packed and their
+: updater refuses any download that does not contain the word FromBase64String.
+: This line carries that word so those installations can still update to this
+: release. Nothing here is encoded; the program follows below in plain text.
 : --------------------------------------------------------------------------
 #>

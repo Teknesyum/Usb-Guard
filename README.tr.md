@@ -154,6 +154,10 @@ alma ve dil seçimi **Gelişmiş Seçenekler** altındadır.
 Bir sürücü temizlendikten sonra USB-Guard kendini o sürücüye kopyalamayı teklif eder; böylece
 sıradaki virüslü bilgisayara elinde taşırsın.
 
+PC taraması bulduklarını numaralandırır. Listedeki bir şey senin ve kalsın istiyorsan, onay
+yerine numarasını yaz: yoksayma listesine yazılır, bir daha raporlanmaz. Gelişmiş menüdeki
+**Yoksayma Listesini Temizle** hepsini geri getirir.
+
 Açılışta USB-Guard sürümünü GitHub'daki son yayınla karşılaştırır. Yeni sürüm varsa indirir,
 çalışan `.bat` ile değiştirir ve yeniden başlar. Sürüm denetimi, PC taraması ve antivirüs
 sorgusu arka planda çalışır: menü yaklaşık bir saniyede hazır olur, durum satırları

@@ -1,6 +1,23 @@
 # Changelog
 
 
+## v1.15
+
+- **The scan showed one finding when it had found several.** The result of the scan step was
+  piped through `Select-Object -Last 1`, so however many remnants were found, only the last
+  one was ever listed, while the status row above kept reporting the real number. Two meant
+  two; fifteen means fifteen. Findings are numbered now.
+
+- **Ignore a finding.** At the scan prompt you can type the numbers of the findings you want
+  to keep, e.g. `1,3`. They go into `C:\ProgramData\Usb-Guard\ignore.txt` and are not
+  listed or counted again. **Clear The Ignore List** in the advanced menu undoes that, and
+  the advanced status block shows how many are ignored.
+
+- Version 1.12 could not update itself to 1.14: its updater refuses any download that does
+  not contain the word `FromBase64String`, and 1.14 dropped the packing. The word is now in
+  the file's header comment, so 1.12 installations update normally.
+
+
 ## v1.14
 
 - **The payload is gone. The file is readable.** `USB-Guard.bat` used to carry the program as

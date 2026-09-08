@@ -156,6 +156,10 @@ language switch live under the advanced submenu.
 After a drive is cleaned, USB-Guard offers to copy itself onto that drive, so you can carry
 it to the next infected computer.
 
+The PC scan numbers what it finds. If something on the list is yours and you want to keep it,
+type its number at the prompt instead of confirming: it is written to an ignore list and is
+not reported again. **Clear The Ignore List** in the advanced menu brings them all back.
+
 On launch USB-Guard compares its version with the latest GitHub release. A newer release is
 downloaded, swapped in place of the running `.bat`, and the program restarts. The version
 check, the PC scan, and the antivirus query run in the background: the menu is ready in
