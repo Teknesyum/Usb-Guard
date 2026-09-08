@@ -1,46 +1,134 @@
-# USB-Guard
+<!-- lang -->
 
-Clean and immunize USB flash drives against shortcut / autorun worms — the family that hides your files, replaces them with a look-alike `.lnk` shortcut, and drops a hidden payload so the infection jumps to the next machine.
+[<img src="assets/badge-lang.svg" alt="English selected, switch to Türkçe" width="124" height="44">](README.tr.md)
 
-One self-elevating `.bat`. No install required. Pick a drive, it fixes and locks it.
 
-## What It Does
+<div align="center">
 
-**Clean**
-- Removes malicious `.lnk` shortcuts that point at a hidden script.
-- Restores the real files the worm hid inside a folder named after the drive label.
-- Clears the hidden payload (`sysvolume` and similar drops).
-- Un-hides files the worm marked System + Hidden.
+# USB&nbsp;·&nbsp;GUARD
 
-**Immunize**
-- Occupies the names a worm needs (`autorun.inf`, `recycler`, `recycled`, `sysvolume`, and the drive label) with locked decoy folders, so the worm cannot recreate them.
-- Each decoy holds a reserved-name subfolder (`con..`) that normal delete operations cannot remove — this also works on FAT32/exFAT.
-- On NTFS it additionally applies a Deny ACL for Everyone, blocking write/create/delete on the decoy.
+### Fix And Immunize USB Drives Against Shortcut Worms
 
-Already-immunized drives are detected and shown as **Zaten Aşılı** (already immunized); they are skipped.
+One self-elevating `.bat`. No install. Pick a drive — it cleans it and locks it.
 
-## Optional Background Watcher
+</div>
 
-You can install a lightweight watcher (opt-in, from the menu). When an infected USB is plugged in, it asks — with a Yes/No prompt — whether to clean and immunize it. Nothing runs without your click. Uninstall from the same menu at any time.
-
-## Usage
-
-1. Download `USB-Guard.bat`.
-2. Double-click it. Windows asks for admin (needed for ACL locks) — approve.
-3. Use the arrow keys to pick a drive, press Enter.
-
-Only removable USB drives that are safe to immunize are listed. System, cloud, and boot/EFI partitions are hidden on purpose.
-
-## Safety
-
-- No self-propagation. It only touches the drive you choose, or one you approve at the prompt.
-- Reversible: immunity is a set of folders and ACLs; the owner can always remove them.
-- Runs locally. It talks to no network.
-
-## License
-
-MIT — see [LICENSE](LICENSE).
 
 ---
 
-**Teknesyum** · [GitHub](https://github.com/Teknesyum) · [Sponsor](https://github.com/sponsors/Teknesyum)
+
+## The Problem
+
+
+You plug in your USB and your files are gone. In their place sits a single shortcut, or a
+folder that opens something you never clicked. This is the **shortcut / autorun worm** — the
+one that spreads across a whole computer lab, one flash drive at a time.
+
+It does three things: it **hides** your real files, drops a **look-alike shortcut** that runs
+a hidden script, and leaves a **payload** so the next machine catches it too.
+
+
+---
+
+
+## What USB-Guard Does
+
+
+### Clean
+
+- Removes the malicious `.lnk` shortcuts that point at a hidden script.
+
+- Restores the real files the worm hid inside a folder named after the drive label.
+
+- Clears the payload drop (`sysvolume` and similar).
+
+- Un-hides files the worm marked System + Hidden.
+
+
+### Immunize
+
+- Occupies the names a worm needs — `autorun.inf`, `recycler`, `recycled`, `sysvolume`, and
+  the drive label — with locked decoy folders, so the worm cannot recreate them.
+
+- Each decoy holds a reserved-name subfolder (`con..`) that normal delete cannot remove. This
+  works on **FAT32 / exFAT** too, not only NTFS.
+
+- On NTFS it also applies a **Deny ACL** for Everyone, blocking write / create / delete on the
+  decoy. The owner can always undo it.
+
+
+A drive that is already protected is detected and shown as **Zaten Aşılı** (already immunized),
+then skipped.
+
+
+---
+
+
+## Optional Background Watcher
+
+
+You can install a lightweight watcher — opt-in, from the menu. When an infected USB is plugged
+in, it asks, with a Yes / No prompt, whether to clean and immunize it.
+
+Nothing runs without your click. Uninstall from the same menu at any time.
+
+
+---
+
+
+## Usage
+
+
+1. Download **`USB-Guard.bat`**.
+
+2. Double-click it. Windows asks for admin — the ACL locks need it — approve.
+
+3. Use the **arrow keys** to pick a drive, press **Enter**.
+
+
+Only removable USB drives that are safe to immunize are listed. System, cloud, and boot / EFI
+partitions are hidden on purpose.
+
+
+### Works Everywhere
+
+It is a plain `.bat` — **cmd** runs it. Inside, it calls the **built-in Windows PowerShell
+5.1**, which ships with every Windows 7 and later. It does **not** need PowerShell 7, and it
+does **not** need PowerShell to be your default shell.
+
+
+---
+
+
+## Safety
+
+
+- **No self-propagation.** It only touches the drive you choose, or one you approve at the
+  prompt.
+
+- **Reversible.** Immunity is a set of folders and ACLs; the owner can always remove them.
+
+- **Local.** It talks to no network.
+
+
+---
+
+
+## License
+
+
+AGPL-3.0-or-later — see [LICENSE](LICENSE).
+
+
+<!-- signature -->
+<div align="center">
+
+<a href="https://github.com/sponsors/Teknesyum"><img src="assets/badge-sponsor.svg" alt="Support Teknesyum" height="38"></a>
+&nbsp;
+<a href="LICENSE"><img src="assets/badge-license.svg" alt="License AGPL-3.0" height="38"></a>
+
+<br><br>
+
+**Teknesyum** · [github.com/Teknesyum](https://github.com/Teknesyum)
+
+</div>
