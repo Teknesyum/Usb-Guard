@@ -1,6 +1,35 @@
 # Changelog
 
 
+## v1.5
+
+- The menu now scans the PC on open and shows **Bu PC : Temiz** or **N Kalıntı - Temizlik
+  Önerilir**; when remnants exist, **Bu PC'yi Temizle (Önerilen)** becomes the first menu item.
+
+- PC scan rebuilt as a signature table: running `wscript` / `cscript` / `mshta` and miner
+  processes, `Run` / `RunOnce` / Policies `Run`, Winlogon `Shell` / `Userinit`, both Startup
+  folders, non-Microsoft scheduled tasks, service `ImagePath` / `ServiceDll`, the PrintMiner
+  artifacts (`svcinsty64.exe`, `svctrl64.exe`, `u######.dll`, `wsvcz\`, `C:\Windows \System32`,
+  hijacked `DcomLaunch`), Defender exclusions, and Explorer sabotage policies.
+
+- Script search covers `.vbs .vbe .js .jse .wsf .hta` in Temp, AppData, LocalAppData,
+  ProgramData, the user profile and Public, one folder deep, content-matched.
+
+- Cleanup runs in order: stop processes, remove services, restore `DcomLaunch`, delete
+  autostart entries, unregister tasks, remove exclusions, restore policies, quarantine files.
+  Locked files are scheduled for move at reboot.
+
+- USB cleanup stops a worm process holding the drive first, reads shortcut **arguments** as
+  well as targets, and restores files from `sysvolume\<label>` and blank-named folders too.
+
+- Status list marks a plugged-in USB as **Solucan İzi** when it carries shortcuts or a live
+  `sysvolume`.
+
+- Spinner no longer types character by character; each step is ~120 ms faster.
+
+- README rewritten in both languages with a table of what the PC scan looks at.
+
+
 ## v1.4
 
 - New menu option **Bu PC'yi Tara ve Kalıntıları Temizle**: scans `Run` / `RunOnce`, the

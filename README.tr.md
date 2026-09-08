@@ -7,9 +7,10 @@
 
 # USB&nbsp;·&nbsp;GUARD
 
-### USB'leri Kısayol Solucanlarına Karşı Düzeltir Ve Aşılar
+### USB'yi Temizle, Aşıla, Arkasındaki PC'yi Kontrol Et
 
-Tek, kendini yükselten `.bat`. Kurulum yok. Sürücüyü seç — temizler ve kilitler.
+Tek, kendini yükselten `.bat`. Kurulum yok. Sürücüyü seç, temizler ve kilitler.
+Menüyü aç, bu bilgisayarın enfekte olup olmadığını söyler.
 
 </div>
 
@@ -17,15 +18,16 @@ Tek, kendini yükselten `.bat`. Kurulum yok. Sürücüyü seç — temizler ve k
 ---
 
 
-## Sorun
+## USB'ne Ne Oldu
 
 
-USB'yi takıyorsun, dosyaların yok. Yerinde tek bir kısayol ya da tıklamadığın bir şeyi açan
-bir klasör duruyor. Bu, **kısayol / autorun solucanı** — koca bir bilgisayar laboratuvarına
-bir flash bellekten diğerine yayılan cinsten.
+Dosyaların yok. Yerlerinde sürücüyle aynı adı taşıyan tek bir kısayol duruyor. Açınca
+dosyaların görünüyor, bir sorun yok sanıyorsun. Bu **kısayol solucanı**: dosyalarını bir
+klasöre gizledi, gizli betiği çalıştıran sahte bir `.lnk` bıraktı ve bir sonraki bilgisayar
+da kapsın diye yükünü geride bıraktı.
 
-Üç iş yapar: gerçek dosyalarını **gizler**, gizli bir betiği çalıştıran **taklit bir kısayol**
-bırakır ve bir sonraki makineye de bulaşsın diye geride bir **yük** bırakır.
+USB-Guard gizli `sysvolume` klasörü kullanan aileye karşı yazıldı; aynı yolla yayılan eski
+VBS ve JS solucanlarını da kapsar.
 
 
 ---
@@ -34,45 +36,57 @@ bırakır ve bir sonraki makineye de bulaşsın diye geride bir **yük** bırak�
 ## USB-Guard Ne Yapar
 
 
-### Temizler
+### USB'yi Temizler
 
-- Gizli bir betiğe işaret eden zararlı `.lnk` kısayollarını siler.
+- Sürücüyü o an tutan solucan sürecini durdurur.
 
-- Solucanın sürücü etiketi adlı klasöre gizlediği gerçek dosyaları yerine geri taşır.
+- Zararlı kısayolları siler. Hem hedefe hem argümanlara bakar; `cmd`, `wscript` ya da
+  `mshta` çalıştıran kısayollar dosyalarınla aynı adı taşısa da yakalanır.
 
-- Yükü (`sysvolume` vb.) siler.
+- Gerçek dosyalarını gizli klasörden geri taşır: solucan sürücü etiketini, `sysvolume\<etiket>`
+  yolunu ya da boş adlı klasörü kullanmış olsa da.
 
-- Solucanın Sistem + Gizli işaretlediği dosyaları görünür yapar.
-
-
-### Aşılar
-
-- Solucanın ihtiyaç duyduğu isimleri — `autorun.inf`, `recycler`, `recycled`, `sysvolume` ve
-  sürücü etiketi — kilitli sahte klasörlerle işgal eder; solucan bunları yeniden oluşturamaz.
-
-- Her sahte klasörün içinde, normal silmenin kaldıramadığı ayrılmış adlı bir alt klasör
-  (`con..`) durur. Bu, yalnız NTFS'te değil **FAT32 / exFAT**'te de çalışır.
-
-- NTFS'te ayrıca Herkes için **Deny ACL** uygular; sahte klasöre yazma / oluşturma / silmeyi
-  engeller. Sahibi her zaman geri alabilir.
+- Yükü siler, Sistem + Gizli özniteliklerini kaldırır.
 
 
-Zaten korunan sürücü algılanır, **Zaten Aşılı** diye gösterilir ve atlanır.
+### USB'yi Aşılar
+
+- Solucanın ihtiyaç duyduğu adları (`autorun.inf`, `recycler`, `recycled`, `sysvolume` ve
+  sürücü etiketi) kilitli sahte klasörlerle işgal eder.
+
+- Her sahte klasörde normal silmeyle kaldırılamayan ayrılmış adlı alt klasör (`con..`) vardır.
+  NTFS kadar **FAT32 / exFAT** üzerinde de çalışır.
+
+- NTFS'te Herkes için Deny ACL yazma, oluşturma ve silmeyi engeller. Sahibi her zaman geri
+  alabilir.
+
+Zaten aşılı sürücü **Aşılı** olarak gösterilir ve atlanır.
 
 
-### Bu PC'yi Tarar
+### Bu PC'yi Kontrol Eder
 
-**v1.4** ile gelen **Bu PC'yi Tara ve Kalıntıları Temizle** seçeneği, solucan kalıntısını
-bilgisayarın kendisinde arar:
+Menü her açıldığında USB-Guard bilgisayarı tarar ve **Bu PC : Temiz** ya da
+**N Kalıntı - Temizlik Önerilir** yazar. Bir şey bulunduysa menünün ilk maddesi
+**Bu PC'yi Temizle (Önerilen)** olur.
 
-- Windows otomatik başlatma kayıtları (`Run` / `RunOnce`).
+Baktığı yerler:
 
-- Başlangıç klasörü.
+| Nerede | Kalıntı sayılan |
+| --- | --- |
+| Çalışan süreçler | Temp ya da AppData'dan başlatılmış `wscript`, `cscript`, `mshta`; madenci ikilileri |
+| `Run` / `RunOnce`, Policies `Run`, Winlogon `Shell` / `Userinit` | Betik yorumlayıcıları, `.vbs` / `.js` / `.bat` yükleri, gizli PowerShell |
+| Başlangıç klasörleri (kullanıcı ve tüm kullanıcılar) | Betikler ve betiğe işaret eden kısayollar |
+| Zamanlanmış görevler | Aynı kurallar, Microsoft görevleri hariç |
+| Servisler | System32 dışındaki `ServiceDll`, ele geçirilmiş `DcomLaunch`, Temp ya da `Windows \` yolları |
+| System32 | `svcinsty64.exe`, `svctrl64.exe`, `u######.dll`, `wsvcz\`, sahte `C:\Windows \System32` |
+| Temp, AppData, ProgramData, kullanıcı profili | Sürücülere, kısayollara ya da autorun'a dokunan küçük betik dosyaları |
+| Windows Defender | Temp, AppData ya da sahte klasörü gösteren dışlamalar |
+| Explorer sabotajı | Kapatılmış Görev Yöneticisi, Kayıt Defteri, Klasör Seçenekleri ya da "gizli dosyaları göster" |
 
-- `Temp` ve `AppData` içindeki şüpheli `.vbs` yükleri.
-
-Bulduklarını önce listeler. **E / H** ile onaylamadan hiçbir şeye dokunmaz. Onay verirsen
-kayıtları siler; dosyaları silmez, **karantinaya taşır** — geri alabilirsin.
+Bulunan her şey önce listelenir. **E / H** ile yanıt vermeden hiçbir şey değişmez. Onayda:
+süreçler durdurulur, servisler ve otomatik başlatma kayıtları kaldırılır, Explorer ayarları
+geri alınır ve dosyalar `%LOCALAPPDATA%\Usb-Guard` altında **karantinaya taşınır**, asla
+silinmez. Windows'un kilitlediği dosya bir sonraki açılışta taşınır.
 
 
 ---
@@ -81,10 +95,8 @@ kayıtları siler; dosyaları silmez, **karantinaya taşır** — geri alabilirs
 ## İsteğe Bağlı Arka Plan İzleyici
 
 
-Menüden, isteğe bağlı, hafif bir izleyici kurabilirsin. Virüslü bir USB takılınca Evet / Hayır
-sorusuyla temizleyip aşılamak isteyip istemediğini sorar.
-
-Tıklamadan hiçbir şey çalışmaz. Aynı menüden istediğin an kaldırılır.
+Menüden kurulur. Virüslü USB takıldığında Evet / Hayır sorusuyla temizleyip aşılamayı
+önerir. Tıklamadan hiçbir şey çalışmaz. Aynı menüden kaldırılır.
 
 
 ---
@@ -95,20 +107,15 @@ Tıklamadan hiçbir şey çalışmaz. Aynı menüden istediğin an kaldırılır
 
 1. **`USB-Guard.bat`** dosyasını indir.
 
-2. Çift tıkla. Windows yönetici onayı ister — ACL kilitleri için gerekli — onayla.
+2. Çift tıkla. Windows yönetici onayı ister; ACL kilitleri ve PC temizliği için gerekli.
 
-3. **Ok tuşlarıyla** sürücüyü ya da menü seçeneğini seç, **Enter**'a bas.
+3. Ok tuşlarıyla gez, **Enter** ile seç, **Esc** ile çık.
 
+Yalnız çıkarılabilir USB sürücüler listelenir. Sistem, bulut ve boot / EFI bölümleri bilerek
+gizlenir.
 
-Sürücü listesinde yalnızca çıkarılabilir USB'ler görünür. Sistem, bulut ve boot / EFI
-bölümleri kasıtla gizlenir.
-
-
-### Her Yerde Çalışır
-
-Bu düz bir `.bat` — onu **cmd** çalıştırır. İçeride Windows'un **yerleşik PowerShell 5.1**'ini
-çağırır; bu, Windows 7 ve sonrasındaki her sürümde kuruludur. **PowerShell 7 gerekmez** ve
-varsayılan kabuğun PowerShell olması **gerekmez**.
+Düz bir `.bat` olduğu için **cmd** çalıştırır. İçeride Windows 7 ve sonrasında hazır gelen
+**Windows PowerShell 5.1** kullanılır. PowerShell 7 gerekmez, varsayılan kabuk değişmez.
 
 
 ---
@@ -117,12 +124,15 @@ varsayılan kabuğun PowerShell olması **gerekmez**.
 ## Güvenlik
 
 
-- **Kendiliğinden yayılmaz.** Yalnız senin seçtiğin ya da uyarıda onayladığın sürücüye dokunur.
+- **Kendiliğinden yayılmaz.** Yalnız seçtiğin ya da onayladığın sürücüye dokunur.
 
-- **Geri alınabilir.** Aşı, sahibinin kaldırabileceği bir dizi klasör ve ACL'dir; PC taraması
-  dosyaları silmez, karantinaya alır.
+- **Geri alınabilir.** Aşı, sahibin kaldırabileceği klasörler ve ACL'lerdir. PC temizliği
+  silmek yerine karantinaya taşır.
 
-- **Yerel.** Hiçbir ağla konuşmaz.
+- **Yerel.** Ağla konuşmaz.
+
+- **Antivirüs değildir.** USB solucan ailelerini ve kalıntılarını tanır. Gerisi için gerçek
+  bir antivirüs kullan.
 
 
 ---
@@ -131,7 +141,7 @@ varsayılan kabuğun PowerShell olması **gerekmez**.
 ## Lisans
 
 
-AGPL-3.0-or-later — bkz. [LICENSE](LICENSE).
+AGPL-3.0-or-later. Bkz. [LICENSE](LICENSE).
 
 
 <!-- signature -->
