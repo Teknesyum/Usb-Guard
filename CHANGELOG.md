@@ -1,6 +1,21 @@
 # Changelog
 
 
+## v1.11
+
+- **Centering actually works now.** PowerShell variable names are case-insensitive, so the
+  local `$w` inside the window-fit code was the same variable as the global `$W` (the block
+  width). The left margin computed as `($w - $W - 6) / 2` was therefore always negative and
+  silently discarded, and every screen hugged the left edge. The margin is now recomputed
+  from the live console width on each redraw, and the banner, the status rows, the menu and
+  the hint line all start in the same column.
+
+- The selected menu row's highlight no longer paints the left margin; it covers the block
+  only, so the bar is the same width as the banner box.
+
+- A blank line separates the two title lines inside the banner box.
+
+
 ## v1.10
 
 - **Right arrow** opens the help for the highlighted item and **left arrow** goes back.

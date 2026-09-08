@@ -1,0 +1,27 @@
+# 006 - v1.11 Ekran Duzeni (2026-09-08)
+# menutest.ps1 ciktisi, 120 sutunluk konsolda. Kenar bosluklari M=27.
+# Banner kutusu, durum satirlari, menu ve alt ipucu ayni sutunda basliyor.
+
+                             +------------------------------------------------------------+
+                             |                                                            |
+                             |                      U S B - G U A R D                     |
+                             |                                                            |
+                             |              Düzelt * Kilitle * Koru   v1.11               |
+                             |                                                            |
+                             +------------------------------------------------------------+
+                             by github.com/Teknesyum
+                             Sponsor: github.com/sponsors/Teknesyum
+                             Sürüm     : v1.11  Güncel
+                             Bu PC     : Temiz
+                             Antivirüs : Bilinmiyor
+                             Uygun USB'ler:
+                               D:  USB  Mustafa Ã–zel         460 GB   Guarded
+                             > Düzelt  ->  D: Mustafa Ã–zel
+                             ------------------------------------------------------------
+                               Bu PC'yi Tara
+                               USB-Guard'ı C:'ye Kur
+                               USB-Guard'ı USB'ye Kur  ->  D: Mustafa Ã–zel
+                             ------------------------------------------------------------
+                               Gelişmiş Seçenekler  >
+                               Çıkış
+                             YÃ¶n: Ok   SeÃ§: Enter   Bilgi: SaÄŸ Ok   GitHub: G   Ã‡Ä±kÄ±Å
