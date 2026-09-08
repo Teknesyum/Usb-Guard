@@ -1,6 +1,25 @@
 # Changelog
 
 
+## v1.12
+
+- **The program speaks English.** On the first run it asks for a language, **1** for English
+  and **2** for Turkish, and every screen follows that choice: the banner tagline, the status
+  rows, both menus, all help pages, the scan and cleanup steps, the quarantine screens, the
+  yes / no prompts and the watcher popup.
+
+- The choice is written to `%LOCALAPPDATA%\Usb-Guard\lang.txt` and not asked again.
+  **Language / Dil** in the advanced submenu changes it later, and the advanced status block
+  shows the current language.
+
+- Every visible string now lives in one of two parallel tables looked up by key, so a drive
+  label or a file path that happens to read like an interface word is never translated.
+
+- Fixed: the label helper was named `LS`, which PowerShell resolves to its built-in
+  `Get-ChildItem` alias before any function, so the status and advanced rows printed their
+  values with no labels in front of them.
+
+
 ## v1.11
 
 - **Centering actually works now.** PowerShell variable names are case-insensitive, so the

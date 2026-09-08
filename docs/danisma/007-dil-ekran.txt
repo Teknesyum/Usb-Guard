@@ -1,0 +1,170 @@
+USB-Guard v1.12 - iki dilde ekran dokumu (langtest.ps1 ciktisi, ANSI temizlenmis)
+
+=================== LANG = en ===================
+                             +------------------------------------------------------------+
+                             |                                                            |
+                             |                      U S B - G U A R D                     |
+                             |                                                            |
+                             |                 Fix * Lock * Guard   v1.12                 |
+                             |                                                            |
+                             +------------------------------------------------------------+
+                             by github.com/Teknesyum
+                             Sponsor: github.com/sponsors/Teknesyum
+                             Version   : v1.12  Up To Date
+                             This PC   : Clean
+                             Antivirus : Protection On   (Microsoft Defender)
+                             Eligible USB Drives:
+                               D:  USB  KINGSTON               61 GB   Guarded
+                               K:  USB  (No Label)             15 GB   Unprotected
+                             > Fix Them All
+                               Fix  ->  D: KINGSTON
+                               Fix  ->  K: (No Label)
+                             ------------------------------------------------------------
+                               Scan This PC
+                               Install USB-Guard To C:
+                               Install USB-Guard To A USB...
+                             ------------------------------------------------------------
+                               Advanced Options  >
+                               Exit
+                             Move: Arrows  Select: Enter  Info: Right  GitHub: G  Exit: Esc
+--- kirli PC + tek usb ---
+                             Version   : v1.12  v1.13 Available - github.com/Teknesyum/Usb-Guard
+                             This PC   : 3 Remnants - Cleanup Recommended
+                             Antivirus : Protection Off   (Avast)
+                             Eligible USB Drives:
+                               D:  USB  KINGSTON               61 GB   Guarded
+                             > Clean This PC  (Recommended)
+                               Fix  ->  D: KINGSTON
+                             ------------------------------------------------------------
+                               Install USB-Guard To C:
+                               Install USB-Guard To The USB  ->  D: KINGSTON
+                             ------------------------------------------------------------
+                               Advanced Options  >
+                               Exit
+                             Move: Arrows  Select: Enter  Info: Right  GitHub: G  Exit: Esc
+--- gelismis ---
+                             [ Advanced Options ]
+                             Watcher          : On
+                             Script Engine    : Off  (worm scripts cannot run)
+                             Running From USB : Off  (no .exe runs from a USB)
+                             Language         : English
+                             > Remove The Watcher
+                               Turn The Script Engine On  (.vbs / .js)
+                               Allow Running From USB  (.exe)
+                               Restore From Quarantine
+                               Language / Dil  >
+                             ------------------------------------------------------------
+                               <  Back
+                             Move: Arrows   Select: Enter   Info: Right   Back: Left / Esc
+--- yardim: scanpc ---
+                             [ Scan This PC ]
+                             Scans this computer for worm remnants: running script
+                             processes, Run/RunOnce, Winlogon, startup folders,
+                             scheduled tasks, services, Defender exclusions and
+                             Explorer sabotage. Findings are listed first; on your
+                             confirmation the entries are deleted and the files are
+                             moved to quarantine. A shallow scan, not a virus scan.
+--- yardim: lang ---
+                             [ Language / Dil  > ]
+                             Changes the interface language: English or Turkish.
+                             The choice is saved and not asked again.
+--- yardim: fix ---
+                             [ Fix  ->  {0} {1} ]
+                             Cleans and guards the selected USB: stops the worm
+                             process, deletes malicious shortcuts (subfolders too),
+                             moves your hidden files back to the root, quarantines
+                             the payload, then occupies the names the worm needs
+                             with locked folders. Your files are never deleted; a
+                             name clash gets a ' (2)' suffix.
+--- yardim: wshoff ---
+                             [ Turn The Script Engine Off  (.vbs / .js) ]
+                             Turns Windows Script Host off (one registry value).
+                             The .vbs / .js worms run through wscript.exe; with this
+                             off, a clicked shortcut launches nothing.
+                             Side effect: legitimate .vbs / .js scripts stop too (some
+                             printer installers, corporate logon scripts, old setup
+                             wizards). Reversible from the same menu.
+=================== LANG = tr ===================
+                             +------------------------------------------------------------+
+                             |                                                            |
+                             |                      U S B - G U A R D                     |
+                             |                                                            |
+                             |              Düzelt * Kilitle * Koru   v1.12               |
+                             |                                                            |
+                             +------------------------------------------------------------+
+                             by github.com/Teknesyum
+                             Sponsor: github.com/sponsors/Teknesyum
+                             Sürüm     : v1.12  Güncel
+                             Bu PC     : Temiz
+                             Antivirüs : Koruma Açık   (Microsoft Defender)
+                             Uygun USB'ler:
+                               D:  USB  KINGSTON               61 GB   Aşılı
+                               K:  USB  (Etiketsiz)            15 GB   Korumasız
+                             > Tümünü Düzelt
+                               Düzelt  ->  D: KINGSTON
+                               Düzelt  ->  K: (Etiketsiz)
+                             ------------------------------------------------------------
+                               Bu PC'yi Tara
+                               USB-Guard'ı C:'ye Kur
+                               USB-Guard'ı USB'ye Kur...
+                             ------------------------------------------------------------
+                               Gelişmiş Seçenekler  >
+                               Çıkış
+                             Yön: Ok   Seç: Enter   Bilgi: Sağ Ok   GitHub: G   Çıkış: Esc
+--- kirli PC + tek usb ---
+                             Sürüm     : v1.12  v1.13 Var - github.com/Teknesyum/Usb-Guard
+                             Bu PC     : 3 Kalıntı - Temizlik Önerilir
+                             Antivirüs : Koruma Kapalı   (Avast)
+                             Uygun USB'ler:
+                               D:  USB  KINGSTON               61 GB   Aşılı
+                             > Bu PC'yi Temizle  (Önerilen)
+                               Düzelt  ->  D: KINGSTON
+                             ------------------------------------------------------------
+                               USB-Guard'ı C:'ye Kur
+                               USB-Guard'ı USB'ye Kur  ->  D: KINGSTON
+                             ------------------------------------------------------------
+                               Gelişmiş Seçenekler  >
+                               Çıkış
+                             Yön: Ok   Seç: Enter   Bilgi: Sağ Ok   GitHub: G   Çıkış: Esc
+--- gelismis ---
+                             [ Gelişmiş Seçenekler ]
+                             İzleyici           : Açık
+                             Betik Motoru       : Kapalı  (solucan betikleri çalışamaz)
+                             USB'den Çalıştırma : Kapalı  (USB'deki .exe açılmaz)
+                             Dil                : Türkçe
+                             > İzleyiciyi Kaldır
+                               Betik Motorunu Aç  (.vbs / .js)
+                               USB'den Çalıştırmayı Aç  (.exe)
+                               Karantinadan Geri Al
+                               Dil / Language  >
+                             ------------------------------------------------------------
+                               <  Geri
+                             Yön: Ok   Seç: Enter   Bilgi: Sağ Ok   Geri: Sol Ok / Esc
+--- yardim: scanpc ---
+                             [ Bu PC'yi Tara ]
+                             Bu bilgisayarı solucan kalıntısı için tarar: çalışan
+                             betik süreçleri, Run/RunOnce, Winlogon, başlangıç
+                             klasörleri, görevler, servisler, Defender dışlamaları,
+                             Explorer sabotajı. Bulunanlar listelenir; onay verirsen
+                             kayıtlar silinir, dosyalar karantinaya taşınır.
+                             Yüzeysel bir taramadır, tam virüs taraması değildir.
+--- yardim: lang ---
+                             [ Dil / Language  > ]
+                             Arayüz dilini değiştirir: İngilizce ya da Türkçe.
+                             Seçim kaydedilir, sonraki açılışta sorulmaz.
+--- yardim: fix ---
+                             [ Düzelt  ->  {0} {1} ]
+                             Seçili USB'yi temizler ve aşılar: solucan sürecini
+                             durdurur, zararlı kısayolları siler (alt klasörler dahil),
+                             gizlenen dosyalarını köke geri taşır, yükü karantinaya
+                             alır, ardından solucanın kullandığı adları kilitli
+                             klasörlerle işgal eder. Dosyaların silinmez; çakışan ad
+                             ' (2)' eki alır.
+--- yardim: wshoff ---
+                             [ Betik Motorunu Kapat  (.vbs / .js) ]
+                             Windows Script Host'u kapatır (tek kayıt değeri).
+                             .vbs / .js solucanları wscript.exe ile çalışır; kapalıyken
+                             kısayola tıklansa bile yük çalışmaz.
+                             Yan etki: meşru .vbs / .js betikleri de durur (bazı yazıcı
+                             kurulumları, kurumsal logon betikleri, eski kurulum
+                             sihirbazları). Aynı menüden geri açılır.
