@@ -21,11 +21,11 @@ Tek, kendini yükselten `.bat`. Kurulum yok. Sürücüyü seç — temizler ve k
 
 
 USB'yi takıyorsun, dosyaların yok. Yerinde tek bir kısayol ya da tıklamadığın bir şeyi açan
-bir klasör duruyor. Bu, **kısayol / autorun solucanı** — koca bir laboratuvara flash flash
-yayılan cinsten.
+bir klasör duruyor. Bu, **kısayol / autorun solucanı** — koca bir bilgisayar laboratuvarına
+bir flash bellekten diğerine yayılan cinsten.
 
-Üç iş yapar: gerçek dosyalarını **gizler**, gizli bir betiği çalıştıran **taklit kısayol**
-bırakır ve bir sonraki makine de kapsın diye bir **yük** bırakır.
+Üç iş yapar: gerçek dosyalarını **gizler**, gizli bir betiği çalıştıran **taklit bir kısayol**
+bırakır ve bir sonraki makineye de bulaşsın diye geride bir **yük** bırakır.
 
 
 ---
@@ -38,9 +38,9 @@ bırakır ve bir sonraki makine de kapsın diye bir **yük** bırakır.
 
 - Gizli bir betiğe işaret eden zararlı `.lnk` kısayollarını siler.
 
-- Solucanın sürücü etiketi adlı klasöre gizlediği gerçek dosyaları geri taşır.
+- Solucanın sürücü etiketi adlı klasöre gizlediği gerçek dosyaları yerine geri taşır.
 
-- Bırakılan yükü (`sysvolume` vb.) temizler.
+- Yükü (`sysvolume` vb.) siler.
 
 - Solucanın Sistem + Gizli işaretlediği dosyaları görünür yapar.
 
@@ -60,6 +60,21 @@ bırakır ve bir sonraki makine de kapsın diye bir **yük** bırakır.
 Zaten korunan sürücü algılanır, **Zaten Aşılı** diye gösterilir ve atlanır.
 
 
+### Bu PC'yi Tarar
+
+**v1.4** ile gelen **Bu PC'yi Tara ve Kalıntıları Temizle** seçeneği, solucan kalıntısını
+bilgisayarın kendisinde arar:
+
+- Windows otomatik başlatma kayıtları (`Run` / `RunOnce`).
+
+- Başlangıç klasörü.
+
+- `Temp` ve `AppData` içindeki şüpheli `.vbs` yükleri.
+
+Bulduklarını önce listeler. **E / H** ile onaylamadan hiçbir şeye dokunmaz. Onay verirsen
+kayıtları siler; dosyaları silmez, **karantinaya taşır** — geri alabilirsin.
+
+
 ---
 
 
@@ -67,7 +82,7 @@ Zaten korunan sürücü algılanır, **Zaten Aşılı** diye gösterilir ve atla
 
 
 Menüden, isteğe bağlı, hafif bir izleyici kurabilirsin. Virüslü bir USB takılınca Evet / Hayır
-soruyla temizleyip aşılamak isteyip istemediğini sorar.
+sorusuyla temizleyip aşılamak isteyip istemediğini sorar.
 
 Tıklamadan hiçbir şey çalışmaz. Aynı menüden istediğin an kaldırılır.
 
@@ -80,13 +95,13 @@ Tıklamadan hiçbir şey çalışmaz. Aynı menüden istediğin an kaldırılır
 
 1. **`USB-Guard.bat`** dosyasını indir.
 
-2. Çift tıkla. Windows yönetici ister — ACL kilitleri için gerekli — onayla.
+2. Çift tıkla. Windows yönetici onayı ister — ACL kilitleri için gerekli — onayla.
 
-3. **Ok tuşlarıyla** sürücüyü seç, **Enter**'a bas.
+3. **Ok tuşlarıyla** sürücüyü ya da menü seçeneğini seç, **Enter**'a bas.
 
 
-Yalnızca aşılanması güvenli ve faydalı çıkarılabilir USB'ler listelenir. Sistem, bulut ve
-boot / EFI bölümleri kasıtla gizlenir.
+Sürücü listesinde yalnızca çıkarılabilir USB'ler görünür. Sistem, bulut ve boot / EFI
+bölümleri kasıtla gizlenir.
 
 
 ### Her Yerde Çalışır
@@ -104,7 +119,8 @@ varsayılan kabuğun PowerShell olması **gerekmez**.
 
 - **Kendiliğinden yayılmaz.** Yalnız senin seçtiğin ya da uyarıda onayladığın sürücüye dokunur.
 
-- **Geri alınabilir.** Bağışıklık bir dizi klasör ve ACL'dir; sahibi hepsini kaldırabilir.
+- **Geri alınabilir.** Aşı, sahibinin kaldırabileceği bir dizi klasör ve ACL'dir; PC taraması
+  dosyaları silmez, karantinaya alır.
 
 - **Yerel.** Hiçbir ağla konuşmaz.
 

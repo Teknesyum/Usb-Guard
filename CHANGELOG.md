@@ -1,6 +1,19 @@
 # Changelog
 
 
+## v1.4
+
+- New menu option **Bu PC'yi Tara ve Kalıntıları Temizle**: scans `Run` / `RunOnce`, the
+  Startup folder and `Temp` / `AppData` for worm remnants, lists them, and on confirmation
+  removes the autostart entries and moves files to quarantine instead of deleting them.
+
+- Signature lines are clickable links (OSC 8) showing the full GitHub and Sponsor URLs.
+
+- Console window shrunk to 62×30 and centered on screen.
+
+- README rewritten in English and Turkish after an editorial review.
+
+
 ## v1.3
 
 - Banner box is computed and centered, so the right border stays aligned regardless of the
