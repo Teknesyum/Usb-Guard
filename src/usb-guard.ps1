@@ -1,7 +1,7 @@
 ﻿param([switch]$Watch,[string]$Drive,[switch]$Bg)
 $ErrorActionPreference = 'SilentlyContinue'
 try{ [Console]::OutputEncoding = [Text.Encoding]::UTF8 }catch{}
-$VER = '1.17'
+$VER = '1.18'
 $ACC = 'Cyan'
 $ACC2 = 'Magenta'
 $W = 60
@@ -92,7 +92,6 @@ $STRTR = @{
  'cp.created'   = "  {0} Oluşturuldu."
  'cp.done'      = "  Tamamlandı."
  'dr.askcopy'   = "  USB-Guard'ı bu USB'ye de kopyalayayım mı? (E/H): "
- 'dr.copywhy'   = "  Böylece virüslü başka bir bilgisayarda da çift tıkla çalışır."
  'dr.copied'    = "  Kopyalandı: {0}"
  'dr.nocopy'    = "  Kopyalanmadı."
 
@@ -135,9 +134,7 @@ $STRTR = @{
  'scan.head'    = "  [ Bu PC - Solucan Kalıntıları ]"
  'scan.spin'    = "Süreçler, Kayıtlar, Görevler, Servisler"
  'scan.clean'   = "  Temiz. Bu PC'de solucan kalıntısı bulunamadı."
- 'scan.note1'   = "  Not: Bu tarama yüzeyseldir. Yalnız solucanların kullandığı başlangıç"
- 'scan.note2'   = "  noktalarına bakar (süreçler, Run kayıtları, görevler, servisler, başlangıç"
- 'scan.note3'   = "  klasörleri). Tam bir virüs taraması değildir; antivirüsünün yerini tutmaz."
+ 'scan.note'    = "Not: Bu tarama yüzeyseldir; yalnız solucanların kullandığı başlangıç noktalarına bakar. Tam bir virüs taraması değildir, antivirüsünün yerini tutmaz."
  'scan.found'   = "  {0} şüpheli kalıntı bulundu:"
  'scan.found1'  = "  1 şüpheli kalıntı bulundu:"
  'scan.ignored' = "  {0} bulgu yoksayıldı. Bir daha listelenmeyecek."
@@ -311,7 +308,6 @@ $STREN = @{
  'cp.created'   = "  {0} Created."
  'cp.done'      = "  Done."
  'dr.askcopy'   = "  Copy USB-Guard onto this USB as well? (Y/N): "
- 'dr.copywhy'   = "  Then it also runs by double-click on another infected PC."
  'dr.copied'    = "  Copied: {0}"
  'dr.nocopy'    = "  Not copied."
 
@@ -354,9 +350,7 @@ $STREN = @{
  'scan.head'    = "  [ This PC - Worm Remnants ]"
  'scan.spin'    = "Processes, Registry, Tasks, Services"
  'scan.clean'   = "  Clean. No worm remnants were found on this PC."
- 'scan.note1'   = "  Note: this scan is shallow. It looks only at the startup points a worm"
- 'scan.note2'   = "  uses (processes, Run keys, tasks, services, startup folders). It is not"
- 'scan.note3'   = "  a full virus scan and does not replace your antivirus."
+ 'scan.note'    = "Note: this scan is shallow; it looks only at the startup points a worm uses. It is not a full virus scan and does not replace your antivirus."
  'scan.found'   = "  {0} suspicious remnants found:"
  'scan.found1'  = "  1 suspicious remnant found:"
  'scan.ignored' = "  {0} finding ignored from now on. It will not be listed again."
@@ -511,18 +505,36 @@ function TN($t,$c='Gray'){ if($script:M){ $bol=$script:bol; try{ $bol=([Console]
 function T($t,$c='Gray'){ TN $t $c; Write-Host ''; $script:bol=$true }
 function Link($url,$text,$c='Cyan'){ $e=[char]27; Write-Host ("{0}]8;;{1}{0}\{2}{0}]8;;{0}\" -f $e,$url,$text) -NoNewline -ForegroundColor $c }
 function Bar($c=$ACC){ T ('  ' + ('=' * $W)) $c }
+function Drain-Keys { try{ while([Console]::KeyAvailable){ [void][Console]::ReadKey($true) } }catch{} }
+function Ask-YN {
+    Drain-Keys
+    while($true){
+        $k=[Console]::ReadKey($true)
+        if($k.Key -eq 'Enter' -or $k.Key -eq 'Escape'){ Write-Host ''; return $false }
+        $c="$($k.KeyChar)"
+        if($c -match '(?i)^[eynh]$'){ Write-Host $c -ForegroundColor White; return [bool]($c -match '(?i)^[ey]$') }
+    }
+}
 function Spin($spText,$spBlock,$okText=$null,$okColor='Green'){
     if($null -eq $okText){ $okText=(S 'sp.ok') }
-    $frames='|','/','-','\'
     TN ("  {0,-50}" -f $spText) 'Gray'
-    for($i=0;$i -lt 4;$i++){ Write-Host ("`b{0}" -f $frames[$i]) -NoNewline -ForegroundColor $ACC; Start-Sleep -Milliseconds 30 }
     $spOut = & $spBlock
-    Write-Host "`b " -NoNewline
     Write-Host '[' -NoNewline -ForegroundColor DarkGray
     Write-Host $okText -NoNewline -ForegroundColor $okColor
     Write-Host ']' -ForegroundColor DarkGray
-    NL
+    $script:bol=$true
     return $spOut
+}
+function Wrap-T($t,$c='Gray',$ind='  '){
+    $lim=$W-$ind.Length
+    $line=''
+    foreach($tok in ("$t" -split ' +')){
+        if(-not $tok){ continue }
+        if($line -and ($line.Length+1+$tok.Length) -gt $lim){ T ($ind+$line) $c; $line=$tok }
+        elseif($line){ $line=$line+' '+$tok }
+        else{ $line=$tok }
+    }
+    if($line){ T ($ind+$line) $c }
 }
 function Box-Line($t,$c='White'){
     $t="$t"; if($t.Length -gt $W){ $t=$t.Substring(0,$W) }
@@ -808,14 +820,14 @@ function Process-Drive($dsk){
     LB 'dr.fs' $script:wDrv 'DarkGray'; T $fs 'White'
     LB 'dr.status' $script:wDrv 'DarkGray'
     if($infected){ T (S 'dr.infected') 'Red' } elseif($allImm){ T (S 'dr.guarded') 'Green' } elseif($immState -eq 'part'){ T (S 'dr.partial') 'Yellow' } else{ T (S 'dr.unprot') 'Yellow' }
-    Bar; NL
+    Bar
 
     if($allImm -and -not $infected){ T (S 'dr.nothing') 'Green'; return }
 
     $q=$null
     if($infected){
         $q=New-Quarantine ("-usb-"+$letter)
-        T (S 'dr.hcleanup') $ACC2; NL
+        T (S 'dr.hcleanup') $ACC2
         Spin (S 'dr.sstop') {
             Get-CimInstance Win32_Process -Filter "Name='wscript.exe' OR Name='cscript.exe' OR Name='mshta.exe'" | Where-Object { "$($_.CommandLine)" -match ('(?i)'+[regex]::Escape("$letter`:")+'|sysvolume') } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force 2>$null }
         } | Out-Null
@@ -837,25 +849,24 @@ function Process-Drive($dsk){
         } | Out-Null
         Spin (S 'dr.ssys') { $s=Join-Path $root 'sysvolume'; if(-not (Test-Immunized $s)){ Restore-Hidden $s $root $q } } | Out-Null
     }
-    Write-Host ''; T (S 'dr.hvisible') $ACC2; NL
+    T (S 'dr.hvisible') $ACC2
     Spin (S 'dr.sshow') { $skip=@($keepDirs)+@($batName,$label)+$fixed; Get-ChildItem -LiteralPath $root -Force | Where-Object { $skip -notcontains $_.Name } | ForEach-Object { attrib -s -h "$($_.FullName)" 2>$null | Out-Null } } | Out-Null
 
-    Write-Host ''; T (S 'dr.himmune') $ACC2; NL
+    T (S 'dr.himmune') $ACC2
     foreach($n in $targets){ $was=Test-Immunized (Join-Path $root $n); Spin (SF 'dr.slock' $n) { Lock-Immunity (Join-Path $root $n) $ntfs } ($(if($was){(S 'sp.already')}else{(S 'sp.ok')})) $(if($was){'DarkGray'}else{'Green'}) | Out-Null }
     if(-not $ntfs){ Write-Host ''; T (SF 'dr.noacl' $fs) 'DarkYellow' }
     Write-Host ''; T (SF 'dr.done' $root) 'Green'
     if($q){ T (SF 'dr.quar' $q) 'Gray' }
-    if($infected){ T (S 'dr.tip') 'Yellow' }
+    if($infected){ Wrap-T (S 'dr.tip') 'Yellow' }
     Offer-Copy $root
 }
 function Offer-Copy($root){
     $src=Get-BatSource
     if(-not $src){ return }
     $dest=Join-Path $root $batName
-    Write-Host ''; T (S 'dr.copywhy') 'DarkGray'
+    Write-Host ''
     TN (S 'dr.askcopy') 'Yellow'
-    $ans=[Console]::ReadLine()
-    if($ans -notmatch '(?i)^[ey]'){ T (S 'dr.nocopy') 'DarkGray'; return }
+    if(-not (Ask-YN)){ T (S 'dr.nocopy') 'DarkGray'; return }
     try{ Copy-Item -LiteralPath $src -Destination $dest -Force -EA Stop; T (SF 'dr.copied' $dest) 'Green' }
     catch{ T (S 'cp.nosrc') 'Red' }
 }
@@ -1117,10 +1128,10 @@ function Clean-PcRemnants($found){
         }
     }
     Write-Host ''; T (SF 'cln.done' $q) 'Green'
-    if($script:needReboot){ T (S 'cln.reboot') 'Yellow' }
+    if($script:needReboot){ Wrap-T (S 'cln.reboot') 'Yellow' }
 }
 function Scan-Pc {
-    Write-Host ''; T (S 'scan.head') $ACC2; NL
+    Write-Host ''; T (S 'scan.head') $ACC2
     $script:scanTmp=@()
     Spin (S 'scan.spin') { $script:scanTmp=@(Find-PcRemnants) } | Out-Null
     $found=@($script:scanTmp)
@@ -1128,9 +1139,7 @@ function Scan-Pc {
     if($found.Count -eq 0){
         $script:pcFound=@()
         T (S 'scan.clean') 'Green'; NL
-        T (S 'scan.note1') 'DarkGray'
-        T (S 'scan.note2') 'DarkGray'
-        T (S 'scan.note3') 'DarkGray'
+        Wrap-T (S 'scan.note') 'DarkGray'
         return
     }
     T $(if($found.Count -eq 1){ S 'scan.found1' } else { SF 'scan.found' $found.Count }) 'Red'; NL
@@ -1139,8 +1148,9 @@ function Scan-Pc {
         TN ("   {0,2}. " -f ($i+1)) 'DarkGray'; TN ("[{0,-6}] " -f $x.Type) 'DarkGray'; T $x.Desc 'Yellow'
         if($x.Detail -and $x.Detail -ne $x.Desc){ $d="$($x.Detail)"; if($d.Length -gt 62){ $d=$d.Substring(0,62)+'..' }; T ("                {0}" -f $d) 'Gray' }
     }
-    Write-Host ''; T (S 'scan.ignhow') 'DarkGray'
+    Write-Host ''; Wrap-T (S 'scan.ignhow') 'DarkGray'
     TN (S 'scan.ask') 'Yellow'
+    Drain-Keys
     $ans="$([Console]::ReadLine())"
     $nums=@([regex]::Matches($ans,'\d+') | ForEach-Object { [int]$_.Value } | Where-Object { $_ -ge 1 -and $_ -le $found.Count } | Select-Object -Unique)
     if($nums.Count -gt 0){
@@ -1162,8 +1172,8 @@ function Toggle-DenyExec($on){
     NL
     if($on){
         T (S 'dx.hoff') $ACC2
-        T (S 'dx.what') 'Gray'
-        T (S 'dx.side') 'DarkYellow'
+        Wrap-T (S 'dx.what') 'Gray'
+        Wrap-T (S 'dx.side') 'DarkYellow'
         NL
         Spin (S 'dx.swrite') { if(-not (Test-Path $dxKey)){ New-Item -Path $dxKey -Force | Out-Null }; Set-ItemProperty -Path $dxKey -Name Deny_Execute -Value 1 -Type DWord } | Out-Null
         Write-Host ''; T (S 'dx.offdone') 'Green'
@@ -1181,8 +1191,8 @@ function Toggle-Wsh($on){
         Write-Host ''; T (S 'wsh.ondone') 'Green'
     } else {
         T (S 'wsh.hoff') $ACC2
-        T (S 'wsh.what') 'Gray'
-        T (S 'wsh.side') 'DarkYellow'
+        Wrap-T (S 'wsh.what') 'Gray'
+        Wrap-T (S 'wsh.side') 'DarkYellow'
         NL
         Spin (S 'wsh.soff') { if(-not (Test-Path $wshKey)){ New-Item -Path $wshKey -Force | Out-Null }; Set-ItemProperty -Path $wshKey -Name Enabled -Value 0 -Type DWord } | Out-Null
         Write-Host ''; T (S 'wsh.offdone') 'Green'
@@ -1562,11 +1572,10 @@ function Restore-Menu {
     T ('  '+$q) 'Gray'; NL
     foreach($f in @(Get-ChildItem -LiteralPath $q -Force -EA SilentlyContinue | Where-Object { $_.Name -ne 'manifest.txt' })){ T ('    '+$f.Name) 'Yellow' }
     Write-Host ''; TN (S 'rq.ask') 'Yellow'
-    $ans=[Console]::ReadLine()
-    if($ans -notmatch '(?i)^[ey]'){ Write-Host ''; T (S 'rq.cancel') 'DarkYellow'; Pause-Key; return }
+    if(-not (Ask-YN)){ T (S 'rq.cancel') 'DarkYellow'; Pause-Key; return }
     $n=Restore-Quarantine $q
     NL
-    if($n -lt 0){ T (S 'rq.nomanifest') 'DarkYellow' }
+    if($n -lt 0){ Wrap-T (S 'rq.nomanifest') 'DarkYellow' }
     else{ T (SF 'rq.done' $n) 'Green' }
     Pause-Key
 }

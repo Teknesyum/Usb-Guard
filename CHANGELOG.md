@@ -1,6 +1,28 @@
 # Changelog
 
 
+## v1.18
+
+A screen-and-keyboard release. Nothing changed in what USB-Guard detects.
+
+- **The Yes/No questions wait for an answer again.** A key pressed earlier — an Enter still
+  in the buffer from the menu — was consumed by the prompt, so the copy-to-USB question
+  answered itself and moved on. The buffer is now drained first, and a single keystroke
+  (E/H, Y/N) decides; Enter and Esc mean no.
+
+- **Half as much scrolling.** The finish screen for one drive went from about 47 lines to 27:
+  the blank line after every step, the empty lines under the section headings, and the
+  explanation under the copy question are gone.
+
+- **The spinner no longer freezes.** Its four frames all played before the work started, so
+  what you actually watched was a stopped `\`. There is no animation now — the label, then
+  the result.
+
+- **Long messages fit the window.** The text after a PC scan, the two side-effect notes and
+  the quarantine and tip lines are wrapped to the box width instead of running past it. The
+  three-part scan note became one sentence.
+
+
 ## v1.17
 
 USB-Guard used to decide what a file was by looking at its name. This release makes it read
