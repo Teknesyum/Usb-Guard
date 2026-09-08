@@ -14,6 +14,7 @@ Open the menu, it tells you whether this computer is infected.
 
 </div>
 
+The program's own menu is Turkish; every item has an F1 help line, and this README names the items as they appear on screen.
 
 ---
 
