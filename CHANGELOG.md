@@ -1,6 +1,70 @@
 # Changelog
 
 
+## v1.17
+
+USB-Guard used to decide what a file was by looking at its name. This release makes it read
+the file.
+
+- **A hidden file is judged by its first 4 KB, not its extension.** A hidden `invoice.pdf`
+  beginning with `MZ`, or a `notes.txt` that is really encoded VBScript (`#@~^`), now counts
+  as a payload. This closes a hole in USB-Guard itself: when it emptied a worm's hidden
+  folder it decided what to quarantine from the extension alone, so a disguised executable
+  was carried out of the folder and dropped in the root of your drive.
+
+- **The arguments of a malicious shortcut are followed.** The files a bad `.lnk` actually
+  names are resolved on the same drive. A payload goes to quarantine; your real document
+  only loses its System + Hidden attributes and stays where it is. `.lnk` targets now also
+  match `/r`, `%comspec%`, `%windir%`, `conhost`, `msiexec`, `regsvr32`, `certutil`,
+  `bitsadmin`, `forfiles` and `wmic` — the launchers Raspberry Robin and its relatives use.
+
+- **Folders disguised as system objects are opened up.** A hidden folder whose `desktop.ini`
+  carries the Recycle Bin, This PC, Control Panel, Search or "God Mode" CLSID, or whose name
+  ends in `.{GUID}`, is treated as a worm container. `RECYCLER`, `RECYCLED`, `_recycle` and
+  `$RECYCLE.BIN.` were added to the container names.
+
+- **`System Volume Information` and `$RECYCLE.BIN` are checked.** Neither folder is ever
+  deleted, but a file inside that is neither a genuine recycle-bin entry nor a known Windows
+  file, and that looks executable, is quarantined. Raspberry Robin and PlugX both hide there.
+
+- **Right-to-left override names are caught.** `resim<RTLO>gpj.exe` shows up in Explorer as
+  `resim exe.jpg`; USB-Guard reads the real name.
+
+- The USB scan goes three folder levels deep instead of two, up to 20 000 files.
+  `.url` and `.scf` were added to the payload extensions.
+
+- **A drive can now be Partially Guarded.** Immunity is a set of decoy folders; if some are
+  in place and some are not — a name added in a later version, or one that was removed — the
+  status says so instead of claiming the drive is protected. Fully immunized reads
+  **Guarded**, none reads **Not Guarded**.
+
+- **A bug that had been there since immunity was written.** The check for "is this hidden
+  folder named in a shortcut" used a regular expression with an unclosed character class and
+  a trailing backslash. It threw on every hidden folder that was not already recognised by
+  name, so those folders were silently skipped.
+
+On the PC side:
+
+- Defender exclusions are read from the policy branch as well as the normal one, and
+  extension and process exclusions are checked too, not only paths.
+
+- `UserInitMprLogonScript` and a redirected `User Shell Folders\Startup` are reported.
+
+- A signed program sitting in a user-writable folder with an **unsigned DLL beside it** is
+  reported as sideloading — the way Mustang Panda runs PlugX. Signature checking used to
+  clear such a program outright.
+
+- The script sweep goes two subfolder levels deep instead of one, covers `Public\Documents`
+  and `Users\Default`, and raises its directory cap from 400 to 1500.
+
+- The PowerShell pattern was narrowed: a bare `bypass` no longer counts on its own, only
+  together with a hidden window, an encoded command, or a path in Temp / AppData /
+  ProgramData / Public. Fewer false positives on normal installers.
+
+- The README now says plainly what USB-Guard does **not** do: BadUSB / HID, file infectors
+  such as Sality and Ramnit, and payloads inside ISO / IMG / VHD images.
+
+
 ## v1.16
 
 - **The language screen takes the arrow keys.** Up and down move the highlight, Enter

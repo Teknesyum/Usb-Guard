@@ -1,7 +1,7 @@
 ﻿param([switch]$Watch,[string]$Drive,[switch]$Bg)
 $ErrorActionPreference = 'SilentlyContinue'
 try{ [Console]::OutputEncoding = [Text.Encoding]::UTF8 }catch{}
-$VER = '1.16'
+$VER = '1.17'
 $ACC = 'Cyan'
 $ACC2 = 'Magenta'
 $W = 60
@@ -30,10 +30,17 @@ $runKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
 $wshKey = 'HKLM:\Software\Microsoft\Windows Script Host\Settings'
 $sysDir = [Environment]::SystemDirectory
 $spaceDir = Join-Path $env:SystemDrive 'Windows \System32'
-$susRx = '(?i)\.(vbs|vbe|js|jse|wsf|hta|bat|cmd)\b|\b(wscript|cscript|mshta)(\.exe)?\b|rundll32[^"]*\\(AppData|ProgramData|Temp)\\|powershell[^"]*(-enc|-e |-w hidden|-windowstyle hidden|bypass)|\\Temp\\[^"]*\.exe|sysvolume|\\Windows \\|wsvcz|\\u\d{6}\.(dll|dat)|\b(xmrig|svctrl64|svcinsty64)\b'
+$knownNames = '(?i)\b(xmrig|svctrl64|svcinsty64|wsvcz|ugate)\b'
+$susRx = '(?i)\.(vbs|vbe|js|jse|wsf|hta|bat|cmd)\b|\b(wscript|cscript|mshta)(\.exe)?\b|rundll32[^"]*\\(AppData|ProgramData|Temp)\\|powershell[^"]*(-e(c|nc|ncodedcommand)?\s|-w(indowstyle)? ?hidden)|powershell[^"]*bypass[^"]*\\(Temp|AppData|ProgramData|Public)\\|\\Temp\\[^"]*\.exe|\\Users\\Public\\[^"]*\.exe|sysvolume|\\Windows \\|wsvcz|\\u\d{6}\.(dll|dat)|\b(xmrig|svctrl64|svcinsty64)\b'
 $scriptExt = '(?i)\.(vbs|vbe|js|jse|wsf|hta|bat|cmd)$'
-$payloadExt = '(?i)\.(vbs|vbe|js|jse|wsf|hta|bat|cmd|scr|pif|com)$'
-$lnkRx = '(?i)sysvolume|\.(vbs|vbe|js|jse|wsf|bat|cmd|hta|ps1)\b|wscript|cscript|mshta|powershell|rundll32|cmd(\.exe)?\s|/c\s'
+$payloadExt = '(?i)\.(vbs|vbe|js|jse|wsf|hta|bat|cmd|scr|pif|com|url|scf)$'
+$codeRx = '(?i)CreateObject|ActiveXObject|WScript\.|<script|On Error Resume Next|ShellExecute|powershell'
+$dataExt = '(?i)^(|\.(jpe?g|png|gif|bmp|webp|tiff?|pdf|docx?|xlsx?|pptx?|txt|rtf|csv|log|dat|bin|ini|cfg|swy|chk|usb|ico|tmp|xml|json|db|mp[34]|avi|mkv|zip|rar|7z))$'
+$rtlRx = '[\u200B-\u200F\u202A-\u202E\u2066-\u2069]'
+$containerRx = '(?i)^(_|\s+|[^\w]{1,3}|recycle\.?bin|\$?recycle[rd]?(\.bin)?\.?|_recycle|sysvolume|.*\.\{[0-9a-f]{8}(-[0-9a-f]{4}){3}-[0-9a-f]{12}\})$'
+$cloakClsid = '(?i)\{(645FF040-5081-101B-9F08-00AA002F954E|20D04FE0-3AEA-1069-A2D8-08002B30309D|21EC2020-3AEA-1069-A2DD-08002B30309D|2559A1F[0-7]-21D7-11D4-BDAF-00C04F60B9F0|ED7BA470-8E54-465E-825C-99712043E01C)\}'
+$sysNameRx = '(?i)^(\$[IR][A-Z0-9]{6}(\..*)?|desktop\.ini|IndexerVolumeGuid|WPSettings\.dat|tracking\.log|ClientRecoveryPasswordRotation|AadRecoveryPasswordDelete|ChkDskDiag\.txt|MountPointManagerRemoteDatabase|\{[0-9a-f-]{36}\}(\{[0-9a-f-]{36}\})?|.*\.(tmp|blf|regtrans-ms))$'
+$lnkRx = '(?i)sysvolume|\.(vbs|vbe|js|jse|wsf|bat|cmd|hta|ps1)\b|wscript|cscript|mshta|powershell|rundll32|cmd(\.exe)?\s|/c\s|/r\s|%comspec%|%windir%|%systemroot%|conhost|msiexec|regsvr32|certutil|bitsadmin|forfiles|wmic|explorer(\.exe)?\s+[^"]*\\'
 $keepDirs = @('System Volume Information','$RECYCLE.BIN')
 $script:pcFound = @()
 
@@ -55,13 +62,15 @@ $STRTR = @{
  'dr.fs'        = "Fs"
  'dr.status'    = "Durum"
  'dr.infected'  = "Solucan İzi Var"
- 'dr.guarded'   = "Zaten Guarded"
+ 'dr.guarded'   = "Zaten Korumalı"
+ 'dr.partial'   = "Kısmen Korumalı"
  'dr.unprot'    = "Korumasız"
- 'dr.nothing'   = "  Zaten Guarded, İşlem Gerekmiyor."
+ 'dr.nothing'   = "  Zaten Korumalı, İşlem Gerekmiyor."
  'dr.hcleanup'  = "  [ Temizlik ]"
  'dr.sstop'     = "Çalışan Solucanı Durdur"
  'dr.slnk'      = "Zararlı Kısayollar ({0})"
  'dr.spayload'  = "Yük Dosyalarını Karantinaya Al ({0})"
+ 'dr.sunhide'   = "Gizlenmiş Dosyaları Geri Aç ({0})"
  'dr.srestore'  = "Gizlenen Dosyaları Geri Taşı"
  'dr.ssys'      = "Sysvolume Yükünü Kaldır"
  'dr.hvisible'  = "  [ Görünürlük ]"
@@ -95,6 +104,8 @@ $STRTR = @{
  'fnd.fakedir'  = """C:\Windows \System32"" (sahte klasör)"
  'fnd.script'   = "Betik: {0}"
  'fnd.excl'     = "Defender Dışlama: {0}"
+ 'fnd.startredir' = "Başlangıç Klasörü Yönlendirilmiş: {0}"
+ 'fnd.sideload' = "Yandan Yüklenen DLL: {0}"
  'fnd.setting'  = "Ayar: {0}"
  'fnd.showall'  = "Ayar: Gizli Dosyaları Göster Bozulmuş"
  'fnd.taskmgr'  = "Görev Yöneticisi Kapalı"
@@ -185,7 +196,8 @@ $STRTR = @{
  'st.usblist'   = "  Uygun USB'ler:"
  'st.nolabel'   = "(Etiketsiz)"
  'st.wormtrace' = "Solucan İzi"
- 'st.guarded'   = "Aşılı"
+ 'st.guarded'   = "Korumalı"
+ 'st.partial'   = "Kısmen Korumalı"
  'st.unprot'    = "Korumasız"
  'st.updating'  = "  Yeni sürüm v{0} indirildi, yeniden başlatılıyor..."
 
@@ -270,12 +282,14 @@ $STREN = @{
  'dr.status'    = "Status"
  'dr.infected'  = "Worm Traces Found"
  'dr.guarded'   = "Already Guarded"
- 'dr.unprot'    = "Unprotected"
+ 'dr.partial'   = "Partially Guarded"
+ 'dr.unprot'    = "Not Guarded"
  'dr.nothing'   = "  Already Guarded, Nothing To Do."
  'dr.hcleanup'  = "  [ Cleanup ]"
  'dr.sstop'     = "Stop The Running Worm"
  'dr.slnk'      = "Malicious Shortcuts ({0})"
  'dr.spayload'  = "Quarantine Payload Files ({0})"
+ 'dr.sunhide'   = "Unhide Restored Files ({0})"
  'dr.srestore'  = "Move Hidden Files Back"
  'dr.ssys'      = "Remove The Sysvolume Payload"
  'dr.hvisible'  = "  [ Visibility ]"
@@ -309,6 +323,8 @@ $STREN = @{
  'fnd.fakedir'  = """C:\Windows \System32"" (fake folder)"
  'fnd.script'   = "Script: {0}"
  'fnd.excl'     = "Defender Exclusion: {0}"
+ 'fnd.startredir' = "Startup Folder Redirected: {0}"
+ 'fnd.sideload' = "Sideloaded DLL: {0}"
  'fnd.setting'  = "Setting: {0}"
  'fnd.showall'  = "Setting: Show Hidden Files Broken"
  'fnd.taskmgr'  = "Task Manager Disabled"
@@ -400,7 +416,8 @@ $STREN = @{
  'st.nolabel'   = "(No Label)"
  'st.wormtrace' = "Worm Traces"
  'st.guarded'   = "Guarded"
- 'st.unprot'    = "Unprotected"
+ 'st.partial'   = "Partially Guarded"
+ 'st.unprot'    = "Not Guarded"
  'st.updating'  = "  New version v{0} downloaded, restarting..."
 
  'adv.head'     = "  [ Advanced Options ]"
@@ -583,6 +600,13 @@ public class Win32c{
 function Unlock-Path($p){ if(Test-Path -LiteralPath $p){ attrib -s -h -r "$p" /s /d 2>$null | Out-Null; takeown /f "$p" /r /d y 2>$null | Out-Null; icacls "$p" /reset /t /c /q 2>$null | Out-Null } }
 function Nuke-Path($p){ if(-not (Test-Path -LiteralPath $p)){ return }; Unlock-Path $p; $lp='\\?\'+$p; try{ [IO.Directory]::Delete($lp,$true) }catch{ Remove-Item -LiteralPath $p -Recurse -Force 2>$null } }
 function Test-Immunized($p){ (Test-Path -LiteralPath $p) -and (Test-Path -LiteralPath ('\\?\'+$p+'\'+$reserved)) }
+function Immunity-State($root,$label){
+    $t=@($fixed); if($label){ $t+=$label }
+    $n=0; foreach($x in $t){ if(Test-Immunized (Join-Path $root $x)){ $n++ } }
+    if($n -eq 0){ return 'none' }
+    if($n -eq $t.Count){ return 'full' }
+    return 'part'
+}
 function Lock-Immunity($p,$ntfs){
     if(Test-Path -LiteralPath $p){
         $it=Get-Item -LiteralPath $p -Force
@@ -636,6 +660,52 @@ function Self-Line($file,$extra){
     return ('& ([scriptblock]::Create([IO.File]::ReadAllText(''' + $file + '''))) ' + $extra).Trim()
 }
 function Pause-Key { Write-Host ''; TN ('  '+(S 'pk.enter')) 'DarkGray'; while($true){ $k=[Console]::ReadKey($true); if('Enter','Escape','LeftArrow','Spacebar' -contains "$($k.Key)"){ break } }; NL }
+function Read-Head($p){
+    try{
+        $fs=[IO.File]::Open($p,'Open','Read','ReadWrite')
+        try{ $n=[int][math]::Min(4096,$fs.Length); if($n -le 0){ return $null }; $b=New-Object byte[] $n; [void]$fs.Read($b,0,$n); return $b }
+        finally{ $fs.Close() }
+    }catch{ return $null }
+}
+function Test-Payload($p){
+    try{ if(-not (Test-Path -LiteralPath $p -PathType Leaf)){ return $false } }catch{ return $false }
+    $e=[IO.Path]::GetExtension($p)
+    if($e -match $payloadExt){ return $true }
+    if($e -match '(?i)^\.(exe|dll)$'){ return $true }
+    $b=Read-Head $p; if(-not $b -or $b.Length -lt 2){ return $false }
+    if($b[0] -eq 77 -and $b[1] -eq 90){ return $true }
+    if($b.Length -ge 4 -and $b[0] -eq 35 -and $b[1] -eq 64 -and $b[2] -eq 126 -and $b[3] -eq 94){ return $true }
+    if($e -match $dataExt){
+        $t=[Text.Encoding]::ASCII.GetString($b)
+        if($t -match $codeRx){ return $true }
+    }
+    return $false
+}
+function Test-Cloak($d){
+    try{
+        if((Split-Path $d -Leaf) -match '\.\{[0-9a-fA-F-]{36}\}$'){ return $true }
+        $di=Join-Path $d 'desktop.ini'
+        if(-not (Test-Path -LiteralPath $di)){ return $false }
+        return ((Get-Content -LiteralPath $di -Raw -EA SilentlyContinue) -match $cloakClsid)
+    }catch{ return $false }
+}
+function Lnk-Files($info,$dir,$root){
+    $out=@()
+    foreach($tok in ($info -split '["'' \t<>&|,;=]+')){
+        if($out.Count -ge 8){ break }
+        if($tok -notmatch '(?i)\.[a-z0-9]{1,5}$'){ continue }
+        $t=$tok -replace '^\.\\',''
+        if($t -match '%'){ try{ $t=[Environment]::ExpandEnvironmentVariables($t) }catch{ continue } }
+        foreach($b in @($dir,$root)){
+            $c=$null
+            try{ $c=if([IO.Path]::IsPathRooted($t)){ $t } else { Join-Path $b $t } }catch{ continue }
+            if(-not $c){ continue }
+            if($c -notmatch ('(?i)^'+[regex]::Escape($root.TrimEnd('\')))){ continue }
+            if(Test-Path -LiteralPath $c -PathType Leaf){ $out+=$c; break }
+        }
+    }
+    return @($out | Select-Object -Unique)
+}
 function Lnk-Info($path){ try{ $s=(New-Object -ComObject WScript.Shell).CreateShortcut($path); return ("{0} {1}" -f $s.TargetPath,$s.Arguments) }catch{ return '' } }
 function New-Quarantine($tag){ $q=Join-Path $base ('quarantine\'+(Get-Date -Format 'yyyyMMdd-HHmmss')+$tag); [IO.Directory]::CreateDirectory($q) | Out-Null; return $q }
 function Move-Quarantine($p,$q){
@@ -646,7 +716,7 @@ function Move-Quarantine($p,$q){
 }
 function Note-Q($q,$dest,$p){ try{ [IO.File]::AppendAllText((Join-Path $q 'manifest.txt'),"$dest|$p`r`n",[Text.Encoding]::UTF8) }catch{} }
 function Inspect-Drive($root,$label){
-    $r=@{BadLnk=@();Hidden=@();Mimic=@();Payload=@()}
+    $r=@{BadLnk=@();Hidden=@();Mimic=@();Payload=@();SysHide=@();Unhide=@()}
     $items=@(Get-ChildItem -LiteralPath $root -Force -EA SilentlyContinue)
     $dirs=@($items | Where-Object { $_.PSIsContainer })
     $hiddenDirs=@($dirs | Where-Object { ($_.Attributes -match 'Hidden') -and ($keepDirs -notcontains $_.Name) -and -not (Test-Immunized $_.FullName) })
@@ -660,24 +730,42 @@ function Inspect-Drive($root,$label){
             if(($info -match $lnkRx) -or ($label -and $it.BaseName -eq $label) -or ($hiddenNames -contains $it.BaseName)){ $r.BadLnk+=$it.FullName; $lnkInfo+=$info }
         }
         elseif($it.Name -match $payloadExt){ if($it.Attributes -match 'Hidden|System'){ $r.Payload+=$it.FullName } }
-        elseif($ext -match '(?i)^\.(exe|scr|pif|com)$'){ if(($dirNames -contains $it.BaseName) -or ($it.Attributes -match 'Hidden|System') -or ($it.Name -match $dblRx)){ $r.Mimic+=$it.FullName } }
+        elseif($ext -match '(?i)^\.(exe|scr|pif|com)$'){ if(($dirNames -contains $it.BaseName) -or ($it.Attributes -match 'Hidden|System') -or ($it.Name -match $dblRx) -or ($it.Name -match $rtlRx)){ $r.Mimic+=$it.FullName } }
+        elseif($it.Name -match $rtlRx){ $r.Mimic+=$it.FullName }
+        elseif(($it.Attributes -match 'Hidden|System') -and ($ext -match $dataExt) -and (Test-Payload $it.FullName)){ $r.Payload+=$it.FullName }
     }
     $skipTop=@($keepDirs)+@($fixed)+@($hiddenNames); if($label){ $skipTop+=$label }
     $rootLen=$root.TrimEnd('\').Length+1
-    foreach($it in @(Get-ChildItem -LiteralPath $root -Recurse -Depth 2 -Force -File -EA SilentlyContinue)){
+    foreach($it in @(Get-ChildItem -LiteralPath $root -Recurse -Depth 3 -Force -File -EA SilentlyContinue | Select-Object -First 20000)){
         $rel=$it.FullName.Substring($rootLen); if($rel -notmatch '\\'){ continue }
         $topSeg=$rel.Split('\')[0]; if($skipTop -contains $topSeg){ continue }
         $ext=$it.Extension
         if($ext -match '(?i)^\.lnk$'){ $info=Lnk-Info $it.FullName; if($info -match $lnkRx){ $r.BadLnk+=$it.FullName; $lnkInfo+=$info } }
         elseif($it.Name -match $payloadExt){ if($it.Attributes -match 'Hidden|System'){ $r.Payload+=$it.FullName } }
-        elseif($ext -match '(?i)^\.(exe|scr|pif|com)$'){ if(($it.Attributes -match 'Hidden|System') -or ($it.Name -match $dblRx)){ $r.Mimic+=$it.FullName } }
+        elseif($ext -match '(?i)^\.(exe|scr|pif|com)$'){ if(($it.Attributes -match 'Hidden|System') -or ($it.Name -match $dblRx) -or ($it.Name -match $rtlRx)){ $r.Mimic+=$it.FullName } }
+        elseif($it.Name -match $rtlRx){ $r.Mimic+=$it.FullName }
+        elseif(($it.Attributes -match 'Hidden|System') -and ($ext -match $dataExt) -and (Test-Payload $it.FullName)){ $r.Payload+=$it.FullName }
     }
     $joined=($lnkInfo -join "`n")
-    $containerRx='(?i)^(_|\s+|[^\w]{1,3}|recycle\.bin|\$recycle\.bin\.?|sysvolume)$'
     foreach($hd in $hiddenDirs){
         $n=$hd.Name
-        $isBox=($n -match $containerRx) -or ($label -and $n -eq $label) -or ($joined -match ('(?i)(^|[\s"\])'+[regex]::Escape($n)+'\'))
+        $isBox=($n -match $containerRx) -or ($label -and $n -eq $label) -or (Test-Cloak $hd.FullName) -or ($joined -match ('(?i)(^|[\s"\\])'+[regex]::Escape($n)+'\\'))
         if($isBox){ $r.Hidden+=$hd.FullName }
+    }
+    foreach($li in $lnkInfo){
+        foreach($ref in (Lnk-Files $li $root $root)){
+            if($r.BadLnk -contains $ref -or $r.Payload -contains $ref -or $r.Mimic -contains $ref){ continue }
+            if(Test-Payload $ref){ if($r.Payload -notcontains $ref){ $r.Payload+=$ref } }
+            elseif($r.Unhide -notcontains $ref){ $r.Unhide+=$ref }
+        }
+    }
+    foreach($kd in $keepDirs){
+        $kp=Join-Path $root $kd
+        if(-not (Test-Path -LiteralPath $kp)){ continue }
+        foreach($it in @(Get-ChildItem -LiteralPath $kp -Recurse -Depth 3 -Force -File -EA SilentlyContinue | Select-Object -First 2000)){
+            if($it.Name -match $sysNameRx){ continue }
+            if(Test-Payload $it.FullName){ $r.SysHide+=$it.FullName }
+        }
     }
     $sysP=Join-Path $root 'sysvolume'
     $r.HasSys=(Test-Path -LiteralPath $sysP) -and -not (Test-Immunized $sysP)
@@ -685,14 +773,14 @@ function Inspect-Drive($root,$label){
     $r.ArFile=[bool]($ar -and -not $ar.PSIsContainer)
     $recP=Join-Path $root 'recycler'
     $r.RecBad=(Test-Path -LiteralPath $recP) -and -not (Test-Immunized $recP)
-    $r.Infected=($r.BadLnk.Count -gt 0) -or $r.HasSys -or $r.ArFile -or $r.RecBad -or ($r.Mimic.Count -gt 0) -or ($r.Payload.Count -gt 0)
+    $r.Infected=($r.BadLnk.Count -gt 0) -or $r.HasSys -or $r.ArFile -or $r.RecBad -or ($r.Mimic.Count -gt 0) -or ($r.Payload.Count -gt 0) -or ($r.SysHide.Count -gt 0)
     return $r
 }
 function Restore-Hidden($hide,$root,$q){
     if(-not (Test-Path -LiteralPath $hide)){ return }
     $kids=@(Get-ChildItem -Force -LiteralPath $hide -EA SilentlyContinue | Where-Object { $_.Name -ne $reserved })
     foreach($k in $kids){
-        if($q -and -not $k.PSIsContainer -and ($k.Name -match $payloadExt -or ($k.Extension -match '(?i)^\.exe$' -and $k.Attributes -match 'Hidden|System'))){ [void](Move-Quarantine $k.FullName $q); continue }
+        if($q -and -not $k.PSIsContainer -and (Test-Payload $k.FullName)){ [void](Move-Quarantine $k.FullName $q); continue }
         $dest=Join-Path $root $k.Name
         if(Test-Path -LiteralPath $dest){ $n=2; $stem=[IO.Path]::GetFileNameWithoutExtension($k.Name); $ext=[IO.Path]::GetExtension($k.Name); do{ $dest=Join-Path $root ("{0} ({1}){2}" -f $stem,$n,$ext); $n++ }while(Test-Path -LiteralPath $dest) }
         attrib -s -h -r "$($k.FullName)" /s /d 2>$null | Out-Null
@@ -709,7 +797,8 @@ function Process-Drive($dsk){
     $fs="$($dsk.FileSystem)"
     $ntfs=$fs -eq 'NTFS'
     $targets=@($fixed); if($label){ $targets+=$label }
-    $allImm=$true; foreach($n in $targets){ if(-not (Test-Immunized (Join-Path $root $n))){ $allImm=$false } }
+    $immState=Immunity-State $root $label
+    $allImm=($immState -eq 'full')
     $ins=Inspect-Drive $root $label
     $infected=$ins.Infected
 
@@ -718,7 +807,7 @@ function Process-Drive($dsk){
     LB 'dr.label' $script:wDrv 'DarkGray'; T "'$label'" 'White'
     LB 'dr.fs' $script:wDrv 'DarkGray'; T $fs 'White'
     LB 'dr.status' $script:wDrv 'DarkGray'
-    if($infected){ T (S 'dr.infected') 'Red' } elseif($allImm){ T (S 'dr.guarded') 'Green' } else{ T (S 'dr.unprot') 'Yellow' }
+    if($infected){ T (S 'dr.infected') 'Red' } elseif($allImm){ T (S 'dr.guarded') 'Green' } elseif($immState -eq 'part'){ T (S 'dr.partial') 'Yellow' } else{ T (S 'dr.unprot') 'Yellow' }
     Bar; NL
 
     if($allImm -and -not $infected){ T (S 'dr.nothing') 'Green'; return }
@@ -733,9 +822,14 @@ function Process-Drive($dsk){
         Spin (SF 'dr.slnk' $ins.BadLnk.Count) {
             foreach($p in $ins.BadLnk){ attrib -s -h -r "$p" 2>$null | Out-Null; Remove-Item -LiteralPath $p -Force 2>$null }
         } | Out-Null
-        Spin (SF 'dr.spayload' ($ins.Payload.Count+$ins.Mimic.Count)) {
-            foreach($p in ($ins.Payload+$ins.Mimic)){ [void](Move-Quarantine $p $q) }
+        Spin (SF 'dr.spayload' ($ins.Payload.Count+$ins.Mimic.Count+$ins.SysHide.Count)) {
+            foreach($p in ($ins.Payload+$ins.Mimic+$ins.SysHide)){ [void](Move-Quarantine $p $q) }
         } | Out-Null
+        if($ins.Unhide.Count -gt 0){
+            Spin (SF 'dr.sunhide' $ins.Unhide.Count) {
+                foreach($p in $ins.Unhide){ attrib -s -h "$p" 2>$null | Out-Null }
+            } | Out-Null
+        }
         Spin (S 'dr.srestore') {
             if($label){ Restore-Hidden (Join-Path (Join-Path $root 'sysvolume') $label) $root $q }
             foreach($h in $ins.Hidden){ if($label -and $h -eq (Join-Path $root $label)){ Restore-Hidden $h $root $q } }
@@ -798,7 +892,13 @@ function Find-RunKeys($f){
         foreach($pr in $p.PSObject.Properties){
             if($pr.Name -match '^PS(Path|ParentPath|ChildName|Drive|Provider)$'){ continue }
             $v="$($pr.Value)"; if($v -match '(?i)usb-guard'){ continue }
-            if($v -match $susRx){ Add-Find $f @{Type='Reg';Key=$k;Name=$pr.Name;Desc=("{0} = {1}" -f $pr.Name,$v)} }
+            if($v -notmatch $susRx){ continue }
+            if($v -match '(?i)\\(Temp|Public)\\[^"]*\.exe' -and -not ($v -match $knownNames) -and (Test-Trusted $v)){
+                $sl=Find-Sideload $v
+                if($sl){ Add-Find $f @{Type='File';Path=$sl;Desc=(SF 'fnd.sideload' (Split-Path $sl -Leaf));Detail=$sl} }
+                continue
+            }
+            Add-Find $f @{Type='Reg';Key=$k;Name=$pr.Name;Desc=("{0} = {1}" -f $pr.Name,$v)}
         }
     }
     $wlk='HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Winlogon'
@@ -811,6 +911,12 @@ function Find-RunKeys($f){
     $ai='HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Windows'
     $ad="$((Get-ItemProperty -Path $ai -Name AppInit_DLLs -EA SilentlyContinue).AppInit_DLLs)".Trim()
     if($ad){ Add-Find $f @{Type='Reg';Key=$ai;Name='AppInit_DLLs';Restore='';Desc=("AppInit_DLLs = {0}" -f $ad)} }
+    $envk='HKCU:\Environment'
+    $ums="$((Get-ItemProperty -Path $envk -Name UserInitMprLogonScript -EA SilentlyContinue).UserInitMprLogonScript)"
+    if($ums){ Add-Find $f @{Type='Reg';Key=$envk;Name='UserInitMprLogonScript';Desc=("UserInitMprLogonScript = {0}" -f $ums)} }
+    $sfk='HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders'
+    $sf="$((Get-ItemProperty -Path $sfk -Name Startup -EA SilentlyContinue).Startup)"
+    if($sf -and $sf -notmatch '(?i)Start Menu\\Programs\\Startup$'){ Add-Find $f @{Type='Reg';Key=$sfk;Name='Startup';Restore=(Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs\Startup');Desc=(SF 'fnd.startredir' $sf)} }
     $ifeo='HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Image File Execution Options'
     foreach($exe in 'taskmgr.exe','regedit.exe','cmd.exe','msconfig.exe','explorer.exe','mmc.exe','powershell.exe','procexp.exe','msseces.exe'){
         $k=Join-Path $ifeo $exe
@@ -864,6 +970,19 @@ function Test-Trusted($s){
         return ($sig -and $sig.Status -eq 'Valid')
     }catch{ return $false }
 }
+function Find-Sideload($s){
+    try{
+        $p=Bin-Path $s
+        if(-not $p){ return $null }
+        $d=Split-Path $p -Parent
+        if(-not $d -or $d -notmatch '(?i)\\(Users|ProgramData|Temp|Public)(\\|$)'){ return $null }
+        foreach($dl in @(Get-ChildItem -LiteralPath $d -Filter '*.dll' -Force -File -EA SilentlyContinue | Select-Object -First 20)){
+            $sg=Get-AuthenticodeSignature -LiteralPath $dl.FullName -EA SilentlyContinue
+            if(-not $sg -or $sg.Status -ne 'Valid'){ return $dl.FullName }
+        }
+    }catch{}
+    return $null
+}
 function Find-Services($f){
     $svcRx='(?i)\\Temp\\|\\Windows \\|\\u\d{6}\.(dll|dat)|wsvcz|svctrl64|svcinsty64|xmrig|\.(vbs|js|bat|cmd)\b'
     $dllRx='(?i)\\Temp\\|\\AppData\\|\\ProgramData\\|\\Users\\|\\Windows \\|\\u\d{6}\.(dll|dat)|wsvcz'
@@ -871,7 +990,7 @@ function Find-Services($f){
         $ip="$((Get-ItemProperty -Path $s.PSPath -EA SilentlyContinue).ImagePath)"
         $dll="$((Get-ItemProperty -Path (Join-Path $s.PSPath 'Parameters') -EA SilentlyContinue).ServiceDll)"
         $hit=$false
-        if($ip -match $svcRx -and -not (Test-Trusted $ip)){ $hit=$true }
+        if($ip -match $svcRx){ if(Test-Trusted $ip){ $sl=Find-Sideload $ip; if($sl){ Add-Find $f @{Type='File';Path=$sl;Desc=(SF 'fnd.sideload' (Split-Path $sl -Leaf));Detail=$sl} } } else { $hit=$true } }
         if($dll -match $dllRx -and -not (Test-Trusted $dll)){ $hit=$true }
         if($hit){ Add-Find $f @{Type='Svc';Name=$s.PSChildName;Desc=(SF 'fnd.svc' $s.PSChildName);Detail=(@($ip,$dll) | Where-Object { $_ }) -join ' | '} }
     }
@@ -885,7 +1004,7 @@ function Find-MinerFiles($f){
     Get-ChildItem -LiteralPath $sysDir -Filter 'u*.dll' -Force -EA SilentlyContinue | Where-Object { $_.Name -match '^u\d{6}\.dll$' } | ForEach-Object { Add-Find $f @{Type='File';Path=$_.FullName;Desc=("System32: {0}" -f $_.Name);Detail=$_.FullName} }
 }
 function Find-Scripts($f){
-    $roots=@($env:TEMP,$env:APPDATA,$env:LOCALAPPDATA,$env:ProgramData,$env:USERPROFILE,$env:PUBLIC) | ForEach-Object { try{ (Get-Item -LiteralPath $_ -Force).FullName }catch{} } | Select-Object -Unique
+    $roots=@($env:TEMP,$env:APPDATA,$env:LOCALAPPDATA,$env:ProgramData,$env:USERPROFILE,$env:PUBLIC,(Join-Path $env:PUBLIC 'Documents'),(Join-Path $env:SystemDrive '\Users\Default')) | ForEach-Object { try{ (Get-Item -LiteralPath $_ -Force).FullName }catch{} } | Select-Object -Unique
     $tempFull=try{ (Get-Item -LiteralPath $env:TEMP -Force).FullName }catch{ $env:TEMP }
     $a='(?i)WScript\.Shell|Scripting\.FileSystemObject|ActiveXObject|CreateObject'
     $b='(?i)sysvolume|autorun|\.lnk|DriveType|RemovableDrive|attrib\s|\.Drives\b|\\Startup\\|CurrentVersion\\Run|\+h\s|\+s\s'
@@ -897,7 +1016,12 @@ function Find-Scripts($f){
         [void]$dirs.Add($d)
         if($d -eq $tempFull){ continue }
         $n=0
-        try{ foreach($sd in [IO.Directory]::EnumerateDirectories($d)){ if((Split-Path $sd -Leaf) -notmatch $skipDir){ [void]$dirs.Add($sd); $n++; if($n -ge 400){ break } } } }catch{}
+        try{ foreach($sd in [IO.Directory]::EnumerateDirectories($d)){
+            if((Split-Path $sd -Leaf) -match $skipDir){ continue }
+            [void]$dirs.Add($sd); $n++
+            try{ foreach($sd2 in [IO.Directory]::EnumerateDirectories($sd)){ if((Split-Path $sd2 -Leaf) -notmatch $skipDir){ [void]$dirs.Add($sd2); $n++ }; if($n -ge 1500){ break } } }catch{}
+            if($n -ge 1500){ break }
+        } }catch{}
     }
     foreach($d in ($dirs | Select-Object -Unique)){
         $files=@(); try{ $files=@([IO.Directory]::EnumerateFiles($d) | Where-Object { $_ -match $extRx }) }catch{}
@@ -909,9 +1033,19 @@ function Find-Scripts($f){
     }
 }
 function Find-Exclusions($f){
-    $k='HKLM:\SOFTWARE\Microsoft\Windows Defender\Exclusions\Paths'
-    $it=Get-Item -Path $k -EA SilentlyContinue; if(-not $it){ return }
-    foreach($p in $it.Property){ if($p -match '(?i)\\Windows \\|wsvcz|\\Temp\\|\\AppData\\|\\ProgramData\\|sysvolume'){ Add-Find $f @{Type='Excl';Path=$p;Desc=(SF 'fnd.excl' $p)} } }
+    $rx='(?i)\\Windows \\|wsvcz|\\Temp\\|\\AppData\\|\\ProgramData\\|\\Users\\Public\\|sysvolume'
+    $seen=@()
+    foreach($b in @('HKLM:\SOFTWARE\Microsoft\Windows Defender\Exclusions','HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender\Exclusions')){
+        foreach($sub in @('Paths','Extensions','Processes')){
+            $it=Get-Item -Path (Join-Path $b $sub) -EA SilentlyContinue; if(-not $it){ continue }
+            foreach($p in $it.Property){
+                if($sub -eq 'Paths' -and $p -notmatch $rx){ continue }
+                if($seen -contains $p){ continue }
+                $seen+=$p
+                Add-Find $f @{Type='Excl';Path=$p;Kind=$sub;Desc=(SF 'fnd.excl' $p)}
+            }
+        }
+    }
 }
 function Find-Sabotage($f){
     $checks=@(
@@ -976,7 +1110,7 @@ function Clean-PcRemnants($found){
                 'SvcDll' { Spin (SF 'cln.svcfix' $x.Name) { Set-ItemProperty -Path ("HKLM:\SYSTEM\CurrentControlSet\Services\{0}\Parameters" -f $x.Name) -Name ServiceDll -Value $x.Restore -Type ExpandString; $script:needReboot=$true } | Out-Null }
                 'Reg'    { if($x.ContainsKey('Restore')){ Spin (SF 'cln.regfix' $x.Name) { Set-ItemProperty -Path $x.Key -Name $x.Name -Value $x.Restore } | Out-Null } else { Spin (SF 'cln.regdel' $x.Name) { Remove-ItemProperty -Path $x.Key -Name $x.Name -EA SilentlyContinue } | Out-Null } }
                 'Task'   { Spin (SF 'cln.taskdel' $x.Name) { Unregister-ScheduledTask -TaskName $x.Name -TaskPath $x.Path -Confirm:$false -EA SilentlyContinue } | Out-Null }
-                'Excl'   { $ok=Spin (S 'cln.exclrm') { try{ Remove-MpPreference -ExclusionPath $x.Path -EA Stop; $true }catch{ $false } } | Select-Object -Last 1; if(-not $ok){ T (SF 'cln.exclman' $x.Path) 'DarkYellow' } }
+                'Excl'   { $ok=Spin (S 'cln.exclrm') { try{ switch("$($x.Kind)"){ 'Extensions' { Remove-MpPreference -ExclusionExtension $x.Path -EA Stop } 'Processes' { Remove-MpPreference -ExclusionProcess $x.Path -EA Stop } default { Remove-MpPreference -ExclusionPath $x.Path -EA Stop } }; $true }catch{ $false } } | Select-Object -Last 1; if(-not $ok){ T (SF 'cln.exclman' $x.Path) 'DarkYellow' } }
                 'Policy' { Spin (SF 'cln.polfix' $x.Name) { if($x.ContainsKey('Set')){ Set-ItemProperty -Path $x.Key -Name $x.Name -Value $x.Set -Type DWord } else { Remove-ItemProperty -Path $x.Key -Name $x.Name -EA SilentlyContinue } } | Out-Null }
                 'File'   { $ok=Spin (SF 'cln.quar' (Split-Path $x.Path -Leaf)) { Quarantine-Path $x.Path $q } | Select-Object -Last 1; if(-not $ok){ T (SF 'cln.nomove' $x.Path) 'Red' } }
             }
@@ -1194,10 +1328,10 @@ function Print-Status($drives){
             $lbl=if($v.VolumeName){ $v.VolumeName } else { (S 'st.nolabel') }; if($lbl.Length -gt 18){ $lbl=$lbl.Substring(0,18) }
             $gb=[math]::Round($v.Size/1GB,1)
             $root="$($v.DeviceID)\"
-            $imm=Test-Immunized (Join-Path $root 'sysvolume')
+            $imm=Immunity-State $root "$($v.VolumeName)"
             $inf=(Inspect-Drive $root "$($v.VolumeName)").Infected
             TN ('    {0}  ' -f $v.DeviceID) 'White'; TN 'USB  ' $ACC; TN ('{0,-18} ' -f $lbl) 'Gray'; TN ('{0,6} GB   ' -f $gb) 'DarkGray'
-            if($inf){ T (S 'st.wormtrace') 'Red' } elseif($imm){ T (S 'st.guarded') 'Green' } else { T (S 'st.unprot') 'Yellow' }
+            if($inf){ T (S 'st.wormtrace') 'Red' } elseif($imm -eq 'full'){ T (S 'st.guarded') 'Green' } elseif($imm -eq 'part'){ T (S 'st.partial') 'DarkYellow' } else { T (S 'st.unprot') 'Yellow' }
         }
     }
     NL

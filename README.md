@@ -50,13 +50,35 @@ covers the older VBS and JS worms that spread the same way.
   `sysvolume\<label>`, `_`, a blank name, or a fake `recycle.bin`. A name clash at the root
   gets a ` (2)` suffix, so nothing is overwritten or lost.
 
-- Moves the payload (hidden `.vbs` / `.js` / `.bat` / `.hta` / `.scr` files, folder-icon
-  `.exe` mimics named after your hidden folders, and double-extension fakes such as
-  `holiday.jpg.exe`) to quarantine under `C:\ProgramData\Usb-Guard`, then clears the
-  System + Hidden attributes.
+- Moves the payload (hidden `.vbs` / `.js` / `.bat` / `.hta` / `.scr` / `.url` / `.scf`
+  files, folder-icon `.exe` mimics named after your hidden folders, and double-extension
+  fakes such as `holiday.jpg.exe`) to quarantine under `C:\ProgramData\Usb-Guard`, then
+  clears the System + Hidden attributes.
 
-- Scans subfolders two levels deep, not only the root. Worms of the Jenxcus family drop a
-  copy of the shortcut and the payload into every folder they find.
+- **Reads the first 4 KB of a hidden file instead of trusting its extension.** A hidden
+  `invoice.pdf` that starts with `MZ`, or a `notes.txt` that is really encoded VBScript
+  (`#@~^`), is treated as a payload. This also stops USB-Guard from carrying such a file
+  back out of the hidden folder and dropping it on your desktop.
+
+- **Follows the arguments of a malicious shortcut.** The files a bad `.lnk` actually names
+  are resolved on the same drive: a payload goes to quarantine, your real document simply
+  loses its System + Hidden attributes and stays where it is.
+
+- **Recognises the folder disguised as a system object.** A hidden folder carrying a
+  `desktop.ini` with the Recycle Bin, This PC, Control Panel or "God Mode" CLSID, or a name
+  ending in `.{GUID}`, is opened up like any other worm container — alongside `RECYCLER`,
+  `RECYCLED`, `$RECYCLE.BIN.`, `_`, a blank name and the drive label.
+
+- **Checks inside `System Volume Information` and `$RECYCLE.BIN`.** Those two folders are
+  never deleted, but any file in them that is neither a genuine recycle-bin entry nor a
+  known Windows file, and that looks executable, is quarantined. Raspberry Robin and PlugX
+  both hide there.
+
+- **Catches right-to-left override names.** `resim‮gpj.exe` renders as `resim exe.jpg` in
+  Explorer; USB-Guard reads the real name.
+
+- Scans subfolders three levels deep, not only the root, up to 20 000 files. Worms of the
+  Jenxcus family drop a copy of the shortcut and the payload into every folder they find.
 
 - Records where each quarantined item came from. **Restore From Quarantine**, in the advanced
   menu, lists past quarantine folders and moves their contents back where they were.
@@ -73,7 +95,10 @@ covers the older VBS and JS worms that spread the same way.
 - On NTFS a Deny ACL for Everyone blocks write, create, and delete on the decoy. The owner
   can always undo it.
 
-An already-immunized drive is marked **Guarded** and skipped.
+A drive whose decoys are all in place is marked **Guarded** and skipped. If only some of
+them are — a new decoy name was added in a later version, or one was removed — it reads
+**Partially Guarded**, and immunizing again fills in what is missing. A drive with none
+reads **Not Guarded**.
 
 
 ### Check This PC
@@ -89,12 +114,14 @@ What it looks at:
 | Running processes | `wscript`, `cscript`, `mshta` launched from Temp or AppData; miner binaries |
 | `Run` / `RunOnce`, Policies `Run`, Winlogon `Shell` / `Userinit` | Script interpreters, `.vbs` / `.js` / `.bat` payloads, hidden PowerShell |
 | Per-user Winlogon `Shell`, `AppInit_DLLs`, IFEO `Debugger` | Replaced user shell, injected DLLs, hijacked Task Manager / Registry Editor / cmd |
+| `UserInitMprLogonScript`, `User Shell Folders\Startup` | Logon script, and a Startup folder redirected somewhere else |
 | Startup folders (user and all users) | Scripts, and shortcuts pointing at scripts |
 | Scheduled tasks | Same rules, Microsoft tasks excluded |
 | Services | `ServiceDll` outside System32, hijacked `DcomLaunch`, paths in Temp or `Windows \` |
+| Signed programs in user-writable folders | An unsigned DLL sitting next to them — the sideloading trick Mustang Panda uses to run PlugX |
 | System32 | `svcinsty64.exe`, `svctrl64.exe`, `u######.dll`, `wsvcz\`, the fake `C:\Windows \System32` |
-| Temp, AppData, ProgramData, user profile | Small script files that touch drives, shortcuts, or autorun |
-| Windows Defender | Exclusions pointing at Temp, AppData, or the fake folder |
+| Temp, AppData, ProgramData, user profile, `Public\Documents`, `Users\Default` | Small script files that touch drives, shortcuts, or autorun — two subfolder levels deep |
+| Windows Defender | Path, extension and process exclusions pointing at Temp, AppData, ProgramData or `Users\Public`, in both the normal and the policy branch |
 | Explorer sabotage | Task Manager, Registry Editor, Folder Options, or "show hidden files" disabled |
 
 Everything found is listed first. Nothing changes until you answer the yes / no prompt.
@@ -203,6 +230,30 @@ ships with every Windows 7 and later. No PowerShell 7, no changed default shell.
 
 - **Not an antivirus.** It knows the USB worm families and their leftovers. Keep a real
   antivirus for everything else.
+
+
+---
+
+
+## What It Does Not Do
+
+Worth knowing before you rely on it.
+
+- **BadUSB / HID.** A device that presents itself as a keyboard and types commands is not a
+  file, so there is nothing on the drive to find. Only Windows device policy stops that.
+
+- **File infectors.** Sality and Ramnit write themselves into your existing `.exe` files.
+  Removing the infection means repairing each host file; USB-Guard does not attempt it, and
+  a real antivirus should.
+
+- **ISO, IMG and VHD images.** Windows mounts them as a drive of their own. USB-Guard does
+  not open container files, so a payload inside one is invisible to it.
+
+- **Firmware and bootkits.** Nothing below the file system is in scope.
+
+A handful of file and process names in the code (`xmrig`, `svctrl64`, `svcinsty64`,
+`wsvcz`) are signatures of specific campaigns rather than general rules. They cost nothing
+and catch a common case; they are not what the tool relies on.
 
 
 ---

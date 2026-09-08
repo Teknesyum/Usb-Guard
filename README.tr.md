@@ -51,13 +51,35 @@ VBS ve JS solucanlarını da kapsar.
   yolunu, `_`, boş adı ya da sahte `recycle.bin` klasörünü kullanmış olsa da. Kökte aynı adlı
   dosya varsa ` (2)` eki alır; hiçbir şey üzerine yazılmaz, kaybolmaz.
 
-- Yükü (gizli `.vbs` / `.js` / `.bat` / `.hta` / `.scr` dosyaları, gizli klasörlerinle aynı
-  adı taşıyan klasör-ikonlu `.exe` taklitleri ve `tatil.jpg.exe` gibi çift uzantılı sahteler)
-  `C:\ProgramData\Usb-Guard` altında karantinaya taşır, ardından Sistem + Gizli
-  özniteliklerini kaldırır.
+- Yükü (gizli `.vbs` / `.js` / `.bat` / `.hta` / `.scr` / `.url` / `.scf` dosyaları, gizli
+  klasörlerinle aynı adı taşıyan klasör-ikonlu `.exe` taklitleri ve `tatil.jpg.exe` gibi çift
+  uzantılı sahteler) `C:\ProgramData\Usb-Guard` altında karantinaya taşır, ardından
+  Sistem + Gizli özniteliklerini kaldırır.
 
-- Yalnız kökü değil, iki seviye derinlikte alt klasörleri de tarar. Jenxcus ailesindeki
-  solucanlar kısayolu ve yükü buldukları her klasöre kopyalar.
+- **Gizli dosyanın uzantısına değil, ilk 4 KB'ına bakar.** `MZ` ile başlayan gizli bir
+  `fatura.pdf` ya da aslında kodlanmış VBScript olan (`#@~^`) bir `notlar.txt` yük sayılır.
+  Bu aynı zamanda USB-Guard'ın böyle bir dosyayı gizli klasörden çıkarıp masaüstüne
+  bırakmasını da engeller.
+
+- **Zararlı kısayolun argümanlarını izler.** Kötü bir `.lnk`'in adını verdiği dosyalar aynı
+  sürücüde çözülür: yük karantinaya gider, gerçek belgen yalnızca Sistem + Gizli
+  özniteliğini kaybeder ve yerinde kalır.
+
+- **Sistem nesnesi kılığındaki klasörü tanır.** Geri Dönüşüm Kutusu, Bu Bilgisayar, Denetim
+  Masası ya da "God Mode" CLSID'sini taşıyan bir `desktop.ini` içeren gizli klasör, ya da
+  adı `.{GUID}` ile biten klasör, diğer solucan kutuları gibi açılır — `RECYCLER`,
+  `RECYCLED`, `$RECYCLE.BIN.`, `_`, boş ad ve sürücü etiketiyle birlikte.
+
+- **`System Volume Information` ve `$RECYCLE.BIN` içine bakar.** Bu iki klasör asla
+  silinmez; ama içinde gerçek bir geri dönüşüm kaydı da bilinen bir Windows dosyası da
+  olmayan, çalıştırılabilir görünen her dosya karantinaya alınır. Raspberry Robin de PlugX
+  de oraya saklanır.
+
+- **Sağdan sola yazım hilesini yakalar.** `resim‮gpj.exe` Explorer'da `resim exe.jpg` görünür;
+  USB-Guard gerçek adı okur.
+
+- Yalnız kökü değil, üç seviye derinlikte alt klasörleri, 20 000 dosyaya kadar tarar.
+  Jenxcus ailesindeki solucanlar kısayolu ve yükü buldukları her klasöre kopyalar.
 
 - Karantinaya alınan her öğenin nereden geldiğini kaydeder. Gelişmiş menüdeki
   **Karantinadan Geri Al** eski karantina klasörlerini listeler ve içindekileri yerine taşır.
@@ -74,7 +96,9 @@ VBS ve JS solucanlarını da kapsar.
 - NTFS'te Herkes için Deny ACL yazma, oluşturma ve silmeyi engeller. Sahibi her zaman geri
   alabilir.
 
-Zaten aşılanmış sürücü **Guarded** olarak gösterilir ve atlanır.
+Sahte klasörlerinin hepsi yerinde olan sürücü **Korumalı** yazar ve atlanır. Yalnız bir
+kısmı varsa — sonraki sürümde yeni bir ad eklendiyse ya da biri silindiyse — **Kısmen
+Korumalı** yazar; yeniden aşılamak eksikleri tamamlar. Hiçbiri yoksa **Korumasız**.
 
 
 ### Bu PC'yi Kontrol Eder
@@ -90,12 +114,14 @@ Baktığı yerler:
 | Çalışan süreçler | Temp ya da AppData'dan başlatılmış `wscript`, `cscript`, `mshta`; madenci ikilileri |
 | `Run` / `RunOnce`, Policies `Run`, Winlogon `Shell` / `Userinit` | Betik yorumlayıcıları, `.vbs` / `.js` / `.bat` yükleri, gizli PowerShell |
 | Kullanıcı Winlogon `Shell`, `AppInit_DLLs`, IFEO `Debugger` | Değiştirilmiş kullanıcı kabuğu, enjekte DLL, ele geçirilmiş Görev Yöneticisi / Kayıt Defteri / cmd |
+| `UserInitMprLogonScript`, `User Shell Folders\Startup` | Oturum açma betiği ve başka yere yönlendirilmiş Başlangıç klasörü |
 | Başlangıç klasörleri (kullanıcı ve tüm kullanıcılar) | Betikler ve betiğe işaret eden kısayollar |
 | Zamanlanmış görevler | Aynı kurallar, Microsoft görevleri hariç |
 | Servisler | System32 dışındaki `ServiceDll`, ele geçirilmiş `DcomLaunch`, Temp ya da `Windows \` yolları |
+| Kullanıcının yazabildiği klasörlerdeki imzalı programlar | Yanlarındaki imzasız DLL — Mustang Panda'nın PlugX'i çalıştırmak için kullandığı yandan yükleme hilesi |
 | System32 | `svcinsty64.exe`, `svctrl64.exe`, `u######.dll`, `wsvcz\`, sahte `C:\Windows \System32` |
-| Temp, AppData, ProgramData, kullanıcı profili | Sürücülere, kısayollara ya da autorun'a dokunan küçük betik dosyaları |
-| Windows Defender | Temp, AppData ya da sahte klasörü gösteren dışlamalar |
+| Temp, AppData, ProgramData, kullanıcı profili, `Public\Documents`, `Users\Default` | Sürücülere, kısayollara ya da autorun'a dokunan küçük betik dosyaları — iki alt klasör derinliğinde |
+| Windows Defender | Hem normal hem politika dalında; Temp, AppData, ProgramData ya da `Users\Public` gösteren yol, uzantı ve süreç dışlamaları |
 | Explorer sabotajı | Kapatılmış Görev Yöneticisi, Kayıt Defteri, Klasör Seçenekleri ya da "gizli dosyaları göster" |
 
 Bulunan her şey önce listelenir. **E / H** ile yanıt vermeden hiçbir şey değişmez. Onayda:
@@ -199,6 +225,30 @@ Düz bir `.bat` olduğu için **cmd** çalıştırır. İçeride Windows 7 ve so
 
 - **Antivirüs değildir.** USB solucan ailelerini ve kalıntılarını tanır. Gerisi için gerçek
   bir antivirüs kullan.
+
+
+---
+
+
+## Yapmadıkları
+
+Güvenmeden önce bilmekte fayda var.
+
+- **BadUSB / HID.** Kendini klavye gibi tanıtıp komut yazan bir cihaz dosya değildir;
+  sürücüde bulunacak bir şey yoktur. Bunu yalnız Windows aygıt politikası durdurur.
+
+- **Dosya bulaştırıcılar.** Sality ve Ramnit kendini mevcut `.exe` dosyalarının içine yazar.
+  Temizlemek her dosyayı onarmak demektir; USB-Guard buna girişmez, gerçek bir antivirüs
+  girişmelidir.
+
+- **ISO, IMG ve VHD kalıpları.** Windows bunları ayrı bir sürücü gibi bağlar. USB-Guard
+  kapsayıcı dosyaların içini açmaz; içindeki yük onun için görünmezdir.
+
+- **Bellenim ve önyükleme setleri.** Dosya sisteminin altındaki hiçbir şey kapsamda değil.
+
+Koddaki birkaç dosya ve süreç adı (`xmrig`, `svctrl64`, `svcinsty64`, `wsvcz`) genel bir
+kural değil, belirli kampanyaların imzasıdır. Maliyeti yok, yaygın bir durumu yakalıyor;
+ama aracın dayandığı şey onlar değil.
 
 
 ---
