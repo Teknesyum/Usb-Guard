@@ -7,7 +7,7 @@ Tek dosya artık hem bat hem PowerShell. Paketleme, %TEMP%'e yazma ve
 
     bat bytes  : 85335
     body match : True
-    sha256     : 41F7CE3B1EE33215EC986176CF7E7DACE75A14E6CED54058398B0F95101C423F
+    sha256     : 8E5AC2E18A5B478103653AB40BCB029AA7211296AC1A3A30F429ED47C9F51E2A
     parses     : True
 
 ## cmd tarafı (yükseltme bloğu çıkarılmış kopya ile)

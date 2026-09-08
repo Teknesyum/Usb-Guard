@@ -1239,8 +1239,10 @@ function Check-Update {
         $tag=[regex]::Match($j,'"tag_name"\s*:\s*"v?([\d.]+)"').Groups[1].Value
         if(-not $tag){ return 'err' }
         if([version]$tag -le [version]$VER){ return 'ok' }
+        $rxh='(?i)(?<![0-9a-f])([0-9a-f]{64})(?![0-9a-f])'
         $bi=$j.IndexOf('"body"')
-        $want=if($bi -ge 0){ [regex]::Match($j.Substring($bi),'(?i)\b([0-9a-f]{64})\b').Groups[1].Value } else { '' }
+        $want=if($bi -ge 0){ [regex]::Match($j.Substring($bi),$rxh).Groups[1].Value } else { '' }
+        if(-not $want){ $want=[regex]::Match($j,$rxh).Groups[1].Value }
         if(-not $want){ return "new $tag" }
         $src=Get-BatSource; if(-not $src){ return "new $tag" }
         $tmp="$src.new"
