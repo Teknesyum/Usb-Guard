@@ -1,0 +1,70 @@
+name: VirusTotal
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag to submit (e.g. v2.0)
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  submit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Decide tag
+        id: pick
+        env:
+          EVENT: ${{ github.event_name }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          INPUT_TAG: ${{ github.event.inputs.tag }}
+        run: |
+          if [ "$EVENT" = "workflow_dispatch" ]; then
+            TAG="$INPUT_TAG"; RUN=yes
+          else
+            TAG="$RELEASE_TAG"
+            case "$TAG" in
+              v*.0) RUN=yes ;;
+              *)    RUN=no  ;;
+            esac
+          fi
+          echo "tag=$TAG"  >> "$GITHUB_OUTPUT"
+          echo "run=$RUN"  >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG run=$RUN"
+
+      - name: Download asset
+        if: steps.pick.outputs.run == 'yes'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download "${{ steps.pick.outputs.tag }}" -R "$GITHUB_REPOSITORY" -p USB-Guard.bat -D .
+
+      - name: Upload to VirusTotal
+        if: steps.pick.outputs.run == 'yes'
+        id: vt
+        env:
+          VT_API_KEY: ${{ secrets.VT_API_KEY }}
+        run: |
+          SHA=$(sha256sum USB-Guard.bat | cut -d' ' -f1)
+          curl -sS -X POST https://www.virustotal.com/api/v3/files \
+            -H "x-apikey: $VT_API_KEY" -F "file=@USB-Guard.bat" -o upload.json
+          cat upload.json
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Append report link to the release notes
+        if: steps.pick.outputs.run == 'yes'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.pick.outputs.tag }}
+          SHA: ${{ steps.vt.outputs.sha }}
+        run: |
+          URL="https://www.virustotal.com/gui/file/$SHA"
+          BODY=$(gh release view "$TAG" -R "$GITHUB_REPOSITORY" --json body -q .body)
+          case "$BODY" in
+            *"$URL"*) echo "already linked"; exit 0 ;;
+          esac
+          printf '%s\n\n---\n\nVirusTotal report for this asset: %s\n' "$BODY" "$URL" > notes.md
+          gh release edit "$TAG" -R "$GITHUB_REPOSITORY" --notes-file notes.md
