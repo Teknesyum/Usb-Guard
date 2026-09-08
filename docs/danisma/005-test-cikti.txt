@@ -1,0 +1,80 @@
+# 005 - v1.9 Test Ciktisi (2026-09-08)
+# usbtest.ps1: subst X: ile sentetik enfekte USB (kok + alt klasor + cift uzanti),
+# Inspect-Drive -> Process-Drive -> Restore-Quarantine.
+# En altta time19b: arka plan runspace olcumu.
+
+--- before ---
+Directory Belgeler
+Hidden, System, Directory Fotoğraflar
+Hidden, System, Directory sysvolume
+Hidden, System, Directory _
+Archive  autorun.inf
+Archive  belge.docx.lnk
+Archive  Fotoğraflar.exe
+Archive  mylink.lnk
+Archive  tatil.jpg.exe
+Hidden, System, Archive x.vbs
+Archive  çakış.txt
+rapor exists: True
+BadLnk: X:\belge.docx.lnk, X:\Belgeler\rapor2.docx.lnk
+Hidden: X:\sysvolume, X:\_
+Payload: X:\x.vbs, X:\Belgeler\y.vbs
+Mimic: X:\Fotoğraflar.exe, X:\tatil.jpg.exe
+Infected: True
+  ============================================================
+  Hedef  : X:\
+  Etiket : 'TESTUSB'
+  Fs     : NTFS
+  Durum  : Solucan İzi Var
+  ============================================================
+  [ Temizlik ]
+  Çalışan Solucanı Durdur                            [Ok]
+  Zararlı Kısayollar (2)                             [Ok]
+  Yük Dosyalarını Karantinaya Al (4)                 [Ok]
+  Gizlenen Dosyaları Geri Taşı                       [Ok]
+  Sysvolume Yükünü Kaldır                            [Ok]
+  [ Görünürlük ]
+  Dosyaları Görünür Yap                              [Ok]
+  [ Bağışıklık ]
+  Kilitle: sysvolume                                 [Ok]
+  Kilitle: autorun.inf                               [Ok]
+  Kilitle: recycler                                  [Ok]
+  Kilitle: recycled                                  [Ok]
+  Kilitle: TESTUSB                                   [Ok]
+  X:\ Tamamlandı.
+  Karantina: C:\Users\Teknesyum\AppData\Local\Usb-Guard\quarantine\20260908-201615-usb-X
+  Öneri: Menüden "Bu PC'yi Tara" ile bilgisayarı da kontrol et.
+--- after ---
+Directory X:\Alt
+ReadOnly, Hidden, System, Directory X:\autorun.inf
+Directory X:\Belgeler
+Directory X:\Fotoğraflar
+ReadOnly, Hidden, System, Directory X:\recycled
+ReadOnly, Hidden, System, Directory X:\recycler
+ReadOnly, Hidden, System, Directory X:\sysvolume
+ReadOnly, Hidden, System, Directory X:\TESTUSB
+Archive  X:\belge.docx
+Archive  X:\mylink.lnk
+Archive  X:\rapor.txt
+Archive  X:\çakış (2).txt
+Archive  X:\çakış.txt
+Archive  X:\Alt\a.txt
+Directory X:\autorun.inf\con..
+_ contents:
+çakış outer: outer
+Fotoğraflar contents: f.jpg
+rapor at root: True
+quarantine 20260908-201615-usb-X: C:\Users\Teknesyum\AppData\Local\Usb-Guard\quarantine\20260908-201615-usb-X\Fotoğraflar.exe, C:\Users\Teknesyum\AppData\Local\Usb-Guard\quarantine\20260908-201615-usb-X\manifest.txt, C:\Users\Teknesyum\AppData\Local\Usb-Guard\quarantine\20260908-201615-usb-X\tatil.jpg.exe, C:\Users\Teknesyum\AppData\Local\Usb-Guard\quarantine\20260908-201615-usb-X\u123456.vbs, C:\Users\Teknesyum\AppData\Local\Usb-Guard\quarantine\20260908-201615-usb-X\x.vbs, C:\Users\Teknesyum\AppData\Local\Usb-Guard\quarantine\20260908-201615-usb-X\y.vbs
+immunized sysvolume: True  TESTUSB: True
+Infected now: False
+Belgeler after: ok.lnk, rapor2.docx
+manifest: C:\Users\Teknesyum\AppData\Local\Usb-Guard\quarantine\20260908-201615-usb-X\x.vbs|X:\x.vbs ;; C:\Users\Teknesyum\AppData\Local\Usb-Guard\quarantine\20260908-201615-usb-X\y.vbs|X:\Belgeler\y.vbs ;; C:\Users\Teknesyum\AppData\Local\Usb-Guard\quarantine\20260908-201615-usb-X\Fotoğraflar.exe|X:\Fotoğraflar.exe ;; C:\Users\Teknesyum\AppData\Local\Usb-Guard\quarantine\20260908-201615-usb-X\tatil.jpg.exe|X:\tatil.jpg.exe ;; C:\Users\Teknesyum\AppData\Local\Usb-Guard\quarantine\20260908-201615-usb-X\u123456.vbs|X:\sysvolume\u123456.vbs
+restored: 4
+root after restore: Alt, autorun.inf, Belgeler, Fotoğraflar, recycled, recycler, sysvolume, TESTUSB, belge.docx, Fotoğraflar.exe, mylink.lnk, rapor.txt, tatil.jpg.exe, x.vbs, çakış (2).txt, çakış.txt
+Belgeler after restore: ok.lnk, rapor2.docx, y.vbs
+quarantine dir remains: True
+rs started: 28 ms
+rs done: 6855 ms
+result: 1
+Upd=ok Def= Found=0
+errors: 0

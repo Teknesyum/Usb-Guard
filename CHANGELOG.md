@@ -1,6 +1,35 @@
 # Changelog
 
 
+## v1.9
+
+- **Subfolders are scanned too**, two levels deep. Jenxcus-style worms drop a copy of the
+  shortcut and the payload into every folder, not only the root, so a root-only scan left
+  half the drive infected.
+
+- **Double-extension mimics** (`holiday.jpg.exe`, `report.pdf.scr`) are recognised as
+  payload, alongside the folder-icon `.exe` trick.
+
+- **Restore from quarantine.** Every quarantined item is recorded with the path it came
+  from. The menu lists past quarantine folders and moves their contents back, with the
+  same ` (2)` suffix rule on a name clash.
+
+- **USB execute switch.** One Windows policy value (`Removable Disks: Deny execute access`)
+  blocks running `.exe` from any removable drive, so a folder-icon fake cannot start at all.
+  Reversible from the same menu; full effect after sign-out.
+
+- **Antivirus row** in the status block: which product is registered and whether its
+  protection is on, read from Windows Security Center.
+
+- **Simpler main menu.** Cleaning and the PC scan stay on the first screen; the watcher,
+  the script-engine switch, the USB execute switch, restore, and the copy actions moved
+  under **Gelişmiş Seçenekler**.
+
+- **Faster start.** The update check, the PC scan, and the antivirus query now run in a
+  background runspace while the menu is already usable. Menu-ready time dropped from about
+  nine seconds to roughly one; the rows fill in as their answers arrive.
+
+
 ## v1.8
 
 - Update check on launch: the latest GitHub release tag is compared with the running version.

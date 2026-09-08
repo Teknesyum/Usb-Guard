@@ -47,9 +47,16 @@ VBS ve JS solucanlarını da kapsar.
   yolunu, `_`, boş adı ya da sahte `recycle.bin` klasörünü kullanmış olsa da. Kökte aynı adlı
   dosya varsa ` (2)` eki alır; hiçbir şey üzerine yazılmaz, kaybolmaz.
 
-- Yükü (gizli `.vbs` / `.js` / `.bat` / `.hta` / `.scr` dosyaları ve gizli klasörlerinle aynı
-  adı taşıyan klasör-ikonlu `.exe` taklitleri) `%LOCALAPPDATA%\Usb-Guard` altında karantinaya
-  taşır, ardından Sistem + Gizli özniteliklerini kaldırır.
+- Yükü (gizli `.vbs` / `.js` / `.bat` / `.hta` / `.scr` dosyaları, gizli klasörlerinle aynı
+  adı taşıyan klasör-ikonlu `.exe` taklitleri ve `tatil.jpg.exe` gibi çift uzantılı sahteler)
+  `%LOCALAPPDATA%\Usb-Guard` altında karantinaya taşır, ardından Sistem + Gizli
+  özniteliklerini kaldırır.
+
+- Yalnız kökü değil, iki seviye derinlikte alt klasörleri de tarar. Jenxcus ailesindeki
+  solucanlar kısayolu ve yükü buldukları her klasöre kopyalar.
+
+- Karantinaya alınan her öğenin nereden geldiğini kaydeder. Gelişmiş menüdeki
+  **Karantinadan Geri Al** eski karantina klasörlerini listeler ve içindekileri yerine taşır.
 
 
 ### USB'yi Aşılar
@@ -96,6 +103,14 @@ silinmez. Windows'un kilitlediği dosya bir sonraki açılışta taşınır.
 ---
 
 
+### USB'den Çalıştırma Anahtarı
+
+**USB'den Çalıştırmayı Kapat** tek bir Windows ilke değeri (`Removable Disks: Deny execute
+access`) yazar; çıkarılabilir hiçbir sürücüden `.exe` çalışmaz. Klasör-ikonlu sahte dosya
+tıklansa bile açılmaz. USB'deki kurulum dosyaları ve taşınabilir programlar da çalışmaz;
+bu yüzden isteğe bağlıdır ve aynı menüden geri alınır. Tam etkisi için oturumu kapatıp aç.
+
+
 ### Betik Motoru Anahtarı
 
 Her VBS / JS solucanı `wscript.exe` üzerinden çalışır. **Betik Motorunu Kapat** tek bir kayıt
@@ -125,8 +140,14 @@ Menüden kurulur. Virüslü USB takıldığında Evet / Hayır sorusuyla temizle
 3. Ok tuşlarıyla gez, **Enter** ile seç, **F1** ile seçili maddenin ne yaptığını oku,
    **G** ile GitHub'ı aç, **Esc** ile çık.
 
+İlk ekranda yalnız temizlik ve PC taraması vardır. İzleyici, betik motoru anahtarı,
+USB'den çalıştırma anahtarı, karantinadan geri alma ve kopyalama işleri
+**Gelişmiş Seçenekler** altındadır.
+
 Açılışta USB-Guard sürümünü GitHub'daki son yayınla karşılaştırır. Yeni sürüm varsa indirir,
-çalışan `.bat` ile değiştirir ve yeniden başlar. Durum satırında **Sürüm : v1.8 Güncel** görünür.
+çalışan `.bat` ile değiştirir ve yeniden başlar. Sürüm denetimi, PC taraması ve antivirüs
+sorgusu arka planda çalışır: menü yaklaşık bir saniyede hazır olur, durum satırları
+yanıtlar geldikçe dolar.
 
 Çıkarılabilir USB sürücüler ve USB sabit diskler listelenir. Sistem sürücüsü, bulut ve
 boot / EFI bölümleri bilerek gizlenir.

@@ -43,6 +43,13 @@ VBScript'i 2027'de kaldıracak; WSH anahtarımız bu yönle uyumlu. Yeni varyant
 Önerilen paket **v1.9 = 1 + 2 + 3 + 6 + 7**: yaklaşık 80 satır, tek paketleme, bir test turu
 (sentetik USB'ye alt klasör kısayolu ve çift uzantılı dosya eklenir). Kalanlar isteğe bağlı.
 
+**Durum (v1.9 yayında):** 1, 2, 3, 6, 7 yapıldı. 7 Defender yerine Windows Güvenlik
+Merkezi'nden okunuyor; hangi antivirüs kayıtlı ve koruması açık mı, onu gösteriyor.
+Üstüne iki madde daha: ana menü sadeleşti (gelişmiş işler alt menüye indi) ve açılıştaki
+güncelleme + PC taraması + antivirüs sorgusu arka plan runspace'ine taşındı; menü ~9 s
+yerine ~1 s'de hazır. Kalan adaylar: 4 (rapor), 5 (sessiz izleyici), 8 (sağ tık),
+9 (dry-run), 10 (İngilizce arayüz).
+
 
 ## Kaynaklar
 

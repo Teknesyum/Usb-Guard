@@ -48,9 +48,16 @@ covers the older VBS and JS worms that spread the same way.
   `sysvolume\<label>`, `_`, a blank name, or a fake `recycle.bin`. A name clash at the root
   gets a ` (2)` suffix, so nothing is overwritten or lost.
 
-- Moves the payload (hidden `.vbs` / `.js` / `.bat` / `.hta` / `.scr` files, and folder-icon
-  `.exe` mimics named after your hidden folders) to quarantine under
-  `%LOCALAPPDATA%\Usb-Guard`, then clears the System + Hidden attributes.
+- Moves the payload (hidden `.vbs` / `.js` / `.bat` / `.hta` / `.scr` files, folder-icon
+  `.exe` mimics named after your hidden folders, and double-extension fakes such as
+  `holiday.jpg.exe`) to quarantine under `%LOCALAPPDATA%\Usb-Guard`, then clears the
+  System + Hidden attributes.
+
+- Scans subfolders two levels deep, not only the root. Worms of the Jenxcus family drop a
+  copy of the shortcut and the payload into every folder they find.
+
+- Records where each quarantined item came from. **Karantinadan Geri Al** in the advanced
+  menu lists past quarantine folders and moves their contents back where they were.
 
 
 ### Immunize The USB
@@ -97,6 +104,14 @@ deleted. A file that is locked by Windows is moved on the next reboot.
 ---
 
 
+### USB Execute Switch
+
+**USB'den Çalıştırmayı Kapat** writes one Windows policy value, `Removable Disks: Deny
+execute access`, so no `.exe` runs from any removable drive. A folder-icon fake cannot start
+even if it is clicked. Installers and portable programs on a USB stop working too, so it is
+optional and reversible from the same menu; sign out and back in for full effect.
+
+
 ### Script Engine Switch
 
 Every VBS / JS worm runs through `wscript.exe`. **Betik Motorunu Kapat** turns Windows
@@ -126,9 +141,14 @@ to clean and immunize it. Nothing runs without your click. Uninstall from the sa
 3. Arrow keys to move, **Enter** to select, **F1** to read what the highlighted item does,
    **G** to open GitHub, **Esc** to leave.
 
+The first screen holds only cleaning and the PC scan. The watcher, the script-engine
+switch, the USB execute switch, restore from quarantine, and the copy actions live under
+**Gelişmiş Seçenekler**.
+
 On launch USB-Guard compares its version with the latest GitHub release. A newer release is
-downloaded, swapped in place of the running `.bat`, and the program restarts. The status row
-shows **Sürüm : v1.8 Güncel**.
+downloaded, swapped in place of the running `.bat`, and the program restarts. The version
+check, the PC scan, and the antivirus query run in the background: the menu is ready in
+about a second and the status rows fill in as their answers arrive.
 
 Removable USB drives and USB hard disks are listed. The system drive, cloud, and boot / EFI
 partitions are hidden on purpose.
