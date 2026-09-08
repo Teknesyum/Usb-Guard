@@ -18,6 +18,7 @@
 
 
 ## v1.7 (not published; folded into v1.8)
+
 - Turkish characters render correctly: the launcher now writes the embedded script as UTF-8
   with BOM, which Windows PowerShell 5.1 needs to read `ş ğ ı` properly.
 
@@ -54,6 +55,7 @@
 
 
 ## v1.6 (not published; folded into v1.8)
+
 - Bigger interface: the console is switched to Consolas 20 on open, the window grows to
   62×40 and stays centered.
 
