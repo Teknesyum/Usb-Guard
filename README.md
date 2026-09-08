@@ -14,7 +14,8 @@ Open the menu, it tells you whether this computer is infected.
 
 </div>
 
-The program's own menu is Turkish; every item has a help line on the right arrow key, and this README names the items as they appear on screen.
+The program's own interface is in Turkish. Every menu item carries a help line on the right
+arrow key. This README describes the items in English.
 
 ---
 
@@ -56,8 +57,8 @@ covers the older VBS and JS worms that spread the same way.
 - Scans subfolders two levels deep, not only the root. Worms of the Jenxcus family drop a
   copy of the shortcut and the payload into every folder they find.
 
-- Records where each quarantined item came from. **Karantinadan Geri Al** in the advanced
-  menu lists past quarantine folders and moves their contents back where they were.
+- Records where each quarantined item came from. **Restore From Quarantine**, in the advanced
+  menu, lists past quarantine folders and moves their contents back where they were.
 
 
 ### Immunize The USB
@@ -71,14 +72,14 @@ covers the older VBS and JS worms that spread the same way.
 - On NTFS a Deny ACL for Everyone blocks write, create, and delete on the decoy. The owner
   can always undo it.
 
-An already-immunized drive is shown as **Aşılı** and skipped.
+An already-immunized drive is marked **Guarded** and skipped.
 
 
 ### Check This PC
 
-Every time the menu opens, USB-Guard scans the computer and prints **Bu PC : Temiz** or
-**N Kalıntı - Temizlik Önerilir**. If something is found, **Bu PC'yi Temizle (Önerilen)** is
-the first item in the menu.
+Every time the menu opens, USB-Guard scans the computer. The status block then reads either
+clean or **N remnants, cleanup recommended**. When something is found, cleaning this PC
+becomes the first item in the menu.
 
 What it looks at:
 
@@ -95,7 +96,7 @@ What it looks at:
 | Windows Defender | Exclusions pointing at Temp, AppData, or the fake folder |
 | Explorer sabotage | Task Manager, Registry Editor, Folder Options, or "show hidden files" disabled |
 
-Everything found is listed first. Nothing changes until you answer **E / H** (Yes / No).
+Everything found is listed first. Nothing changes until you answer the yes / no prompt.
 On confirmation: processes are stopped, services and autostart entries removed, Explorer
 settings restored, and files **moved to quarantine** under `%LOCALAPPDATA%\Usb-Guard`, never
 deleted. A file that is locked by Windows is moved on the next reboot.
@@ -106,17 +107,17 @@ deleted. A file that is locked by Windows is moved on the next reboot.
 
 ### USB Execute Switch
 
-**USB'den Çalıştırmayı Kapat** writes one Windows policy value, `Removable Disks: Deny
-execute access`, so no `.exe` runs from any removable drive. A folder-icon fake cannot start
+This switch writes one Windows policy value, `Removable Disks: Deny execute access`, so no
+`.exe` runs from any removable drive. A folder-icon fake cannot start
 even if it is clicked. Installers and portable programs on a USB stop working too, so it is
 optional and reversible from the same menu; sign out and back in for full effect.
 
 
 ### Script Engine Switch
 
-Every VBS / JS worm runs through `wscript.exe`. **Betik Motorunu Kapat** turns Windows
-Script Host off with one registry value, so a clicked shortcut launches nothing even on an
-unprotected PC. The status row shows **Betik Motoru : Açık / Kapalı**. Legitimate `.vbs`
+Every VBS / JS worm runs through `wscript.exe`. This switch turns Windows Script Host off
+with one registry value, so a clicked shortcut launches nothing even on an unprotected PC.
+The status block reports whether the engine is on or off. Legitimate `.vbs`
 scripts (some printer installers, corporate logon scripts) stop too, so it is optional and
 can be switched back on from the same menu.
 
@@ -144,7 +145,7 @@ to clean and immunize it. Nothing runs without your click. Uninstall from the sa
 The first screen holds cleaning, the PC scan, and the two install actions. Installing to a
 USB names the drive it will write to, so several plugged-in sticks are not a guess. The
 watcher, the script-engine switch, the USB execute switch, and restore from quarantine live
-under **Gelişmiş Seçenekler**.
+under the advanced submenu.
 
 On launch USB-Guard compares its version with the latest GitHub release. A newer release is
 downloaded, swapped in place of the running `.bat`, and the program restarts. The version

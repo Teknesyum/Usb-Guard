@@ -28,13 +28,13 @@
 - A clean PC scan now says the scan is shallow: it checks the startup points worms use,
   not the whole disk, and does not replace an antivirus.
 
-- `Devam İçin Enter` accepts Enter, Esc, space, and left arrow only. Other keys no longer
+- The continue prompt accepts Enter, Esc, space, and left arrow only. Other keys no longer
   echo stray letters into the console.
 
-- Status block: the Sürüm / Bu PC / Antivirüs labels are brighter, a blank line frames the
+- Status block: the version, PC and antivirus labels are brighter, a blank line frames the
   USB list, and section headings inside a run have space around them.
 
-- **Aşılı** is now **Guarded** in the drive list and in the per-drive summary.
+- An immunized drive now reads **Guarded** in the drive list and in the per-drive summary.
 
 
 ## v1.9
@@ -59,7 +59,7 @@
 
 - **Simpler main menu.** Cleaning and the PC scan stay on the first screen; the watcher,
   the script-engine switch, the USB execute switch, restore, and the copy actions moved
-  under **Gelişmiş Seçenekler**.
+  under the advanced submenu.
 
 - **Faster start.** The update check, the PC scan, and the antivirus query now run in a
   background runspace while the menu is already usable. Menu-ready time dropped from about
@@ -71,7 +71,8 @@
 - Update check on launch: the latest GitHub release tag is compared with the running version.
   A newer release is downloaded from the release asset, verified, swapped in place of the
   running `.bat` (and the installed copy), and USB-Guard restarts. The status row shows
-  **Sürüm : v1.8 Güncel / Denetlenemedi**. This is the only network call the program makes.
+  whether the running version is current or could not be checked. This is the only network
+  call the program makes.
 
 - **F1** shows a plain-language explanation of the highlighted menu item; **G** opens the
   GitHub page and **S** the sponsor page in the browser (the console cannot make links clickable).
@@ -85,10 +86,10 @@
 ## v1.7 (not published; folded into v1.8)
 
 - Turkish characters render correctly: the launcher now writes the embedded script as UTF-8
-  with BOM, which Windows PowerShell 5.1 needs to read `ş ğ ı` properly.
+  with BOM, which Windows PowerShell 5.1 needs in order to read them properly.
 
-- Window is 80×34 (wider, a little shorter), Consolas 20, 60-column box; all labels carry
-  Turkish characters (**Tümünü Düzelt**, **İzleyici Kur**, **Çıkış**).
+- Window is 80×34 (wider, a little shorter), Consolas 20, 60-column box; menu labels are
+  spelled with proper Turkish characters again.
 
 - USB cleanup covers more worm families: hidden container folders named `_`, blank,
   punctuation, `recycle.bin`, or referenced by a malicious shortcut are restored; hidden
@@ -112,9 +113,9 @@
 - PC scan adds per-user Winlogon `Shell`, `AppInit_DLLs` and IFEO `Debugger` hijacks of
   Task Manager, Registry Editor, cmd, msconfig, Explorer, mmc, PowerShell, Process Explorer.
 
-- New optional menu item **Betik Motorunu Kapat / Aç**: toggles Windows Script Host via
-  `HKLM\Software\Microsoft\Windows Script Host\Settings\Enabled`; the status row shows
-  **Betik Motoru : Açık / Kapalı**.
+- New optional menu item, the script-engine switch: toggles Windows Script Host via
+  `HKLM\Software\Microsoft\Windows Script Host\Settings\Enabled`, and the status block
+  reports whether the engine is on or off.
 
 - Watcher inspects shortcut targets and arguments before offering cleanup.
 
@@ -126,14 +127,14 @@
 
 - A blank line between every menu item, status row and step so the screen reads easily.
 
-- Shorter menu labels: **Tumunu Duzelt**, **Duzelt -> D: LABEL**, **Izleyici Kur / Kaldir**,
-  **USB-Guardı Usb'ye Kopyala**, **USB-Guardı C:'ye Kopyala**.
+- Shorter menu labels for fix-all, fix-one-drive, install and remove the watcher, and the
+  two copy actions.
 
 
 ## v1.5
 
-- The menu now scans the PC on open and shows **Bu PC : Temiz** or **N Kalıntı - Temizlik
-  Önerilir**; when remnants exist, **Bu PC'yi Temizle (Önerilen)** becomes the first menu item.
+- The menu now scans the PC on open and reports either a clean machine or the number of
+  remnants found; when remnants exist, cleaning this PC becomes the first menu item.
 
 - PC scan rebuilt as a signature table: running `wscript` / `cscript` / `mshta` and miner
   processes, `Run` / `RunOnce` / Policies `Run`, Winlogon `Shell` / `Userinit`, both Startup
@@ -151,8 +152,8 @@
 - USB cleanup stops a worm process holding the drive first, reads shortcut **arguments** as
   well as targets, and restores files from `sysvolume\<label>` and blank-named folders too.
 
-- Status list marks a plugged-in USB as **Solucan İzi** when it carries shortcuts or a live
-  `sysvolume`.
+- The status list flags a plugged-in USB as worm-infected when it carries malicious
+  shortcuts or a live `sysvolume`.
 
 - Spinner no longer types character by character; each step is ~120 ms faster.
 
@@ -161,7 +162,7 @@
 
 ## v1.4
 
-- New menu option **Bu PC'yi Tara ve Kalıntıları Temizle**: scans `Run` / `RunOnce`, the
+- New menu option to scan this PC and clean the remnants: it looks at `Run` / `RunOnce`, the
   Startup folder and `Temp` / `AppData` for worm remnants, lists them, and on confirmation
   removes the autostart entries and moves files to quarantine instead of deleting them.
 

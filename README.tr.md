@@ -70,7 +70,7 @@ VBS ve JS solucanlarını da kapsar.
 - NTFS'te Herkes için Deny ACL yazma, oluşturma ve silmeyi engeller. Sahibi her zaman geri
   alabilir.
 
-Zaten aşılı sürücü **Aşılı** olarak gösterilir ve atlanır.
+Zaten aşılanmış sürücü **Guarded** olarak gösterilir ve atlanır.
 
 
 ### Bu PC'yi Kontrol Eder
