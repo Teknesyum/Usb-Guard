@@ -1,6 +1,27 @@
 # Changelog
 
 
+## v1.10
+
+- **Right arrow** opens the help for the highlighted item and **left arrow** goes back.
+  F1 is gone.
+
+- Installing to `C:` and installing to a USB are back on the main menu, and the USB item
+  names the drive it will write to (`-> K: KINGSTON`) so several plugged-in sticks are not
+  a guess. With more than one USB the picker lists letter and label.
+
+- A clean PC scan now says the scan is shallow: it checks the startup points worms use,
+  not the whole disk, and does not replace an antivirus.
+
+- `Devam İçin Enter` accepts Enter, Esc, space, and left arrow only. Other keys no longer
+  echo stray letters into the console.
+
+- Status block: the Sürüm / Bu PC / Antivirüs labels are brighter, a blank line frames the
+  USB list, and section headings inside a run have space around them.
+
+- **Aşılı** is now **Guarded** in the drive list and in the per-drive summary.
+
+
 ## v1.9
 
 - **Subfolders are scanned too**, two levels deep. Jenxcus-style worms drop a copy of the

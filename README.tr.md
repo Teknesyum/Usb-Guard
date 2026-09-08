@@ -137,12 +137,13 @@ Menüden kurulur. Virüslü USB takıldığında Evet / Hayır sorusuyla temizle
 
 2. Çift tıkla. Windows yönetici onayı ister; ACL kilitleri ve PC temizliği için gerekli.
 
-3. Ok tuşlarıyla gez, **Enter** ile seç, **F1** ile seçili maddenin ne yaptığını oku,
-   **G** ile GitHub'ı aç, **Esc** ile çık.
+3. Ok tuşlarıyla gez, **Enter** ile seç, **sağ ok** ile seçili maddenin ne yaptığını oku,
+   **sol ok** ile geri dön, **G** ile GitHub'ı aç, **Esc** ile çık.
 
-İlk ekranda yalnız temizlik ve PC taraması vardır. İzleyici, betik motoru anahtarı,
-USB'den çalıştırma anahtarı, karantinadan geri alma ve kopyalama işleri
-**Gelişmiş Seçenekler** altındadır.
+İlk ekranda temizlik, PC taraması ve iki kurulum seçeneği vardır. USB'ye kurma seçeneği
+yazacağı sürücünün adını gösterir; birden fazla USB takılıysa hangisi olduğu tahmin
+edilmez. İzleyici, betik motoru anahtarı, USB'den çalıştırma anahtarı ve karantinadan geri
+alma **Gelişmiş Seçenekler** altındadır.
 
 Açılışta USB-Guard sürümünü GitHub'daki son yayınla karşılaştırır. Yeni sürüm varsa indirir,
 çalışan `.bat` ile değiştirir ve yeniden başlar. Sürüm denetimi, PC taraması ve antivirüs

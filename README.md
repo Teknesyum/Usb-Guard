@@ -14,7 +14,7 @@ Open the menu, it tells you whether this computer is infected.
 
 </div>
 
-The program's own menu is Turkish; every item has an F1 help line, and this README names the items as they appear on screen.
+The program's own menu is Turkish; every item has a help line on the right arrow key, and this README names the items as they appear on screen.
 
 ---
 
@@ -138,12 +138,13 @@ to clean and immunize it. Nothing runs without your click. Uninstall from the sa
 
 2. Double-click it. Windows asks for admin, which the ACL locks and the PC cleanup need.
 
-3. Arrow keys to move, **Enter** to select, **F1** to read what the highlighted item does,
-   **G** to open GitHub, **Esc** to leave.
+3. Arrow keys to move, **Enter** to select, **right arrow** to read what the highlighted
+   item does, **left arrow** to go back, **G** to open GitHub, **Esc** to leave.
 
-The first screen holds only cleaning and the PC scan. The watcher, the script-engine
-switch, the USB execute switch, restore from quarantine, and the copy actions live under
-**Gelişmiş Seçenekler**.
+The first screen holds cleaning, the PC scan, and the two install actions. Installing to a
+USB names the drive it will write to, so several plugged-in sticks are not a guess. The
+watcher, the script-engine switch, the USB execute switch, and restore from quarantine live
+under **Gelişmiş Seçenekler**.
 
 On launch USB-Guard compares its version with the latest GitHub release. A newer release is
 downloaded, swapped in place of the running `.bat`, and the program restarts. The version
