@@ -182,6 +182,17 @@ ships with every Windows 7 and later. No PowerShell 7, no changed default shell.
 - **Local.** Its only network call is the version check against GitHub on launch; no data
   leaves the computer.
 
+- **Readable.** `USB-Guard.bat` is a plain text file. Right-click it, choose Edit, and you
+  see the whole program: a short batch launcher and then the PowerShell source, exactly as it
+  is in `src/usb-guard.ps1`. Nothing is compressed, encoded, or unpacked into a temporary
+  folder before it runs.
+
+- **Verifiable.** Every release note carries the SHA256 of the file. Compare it with
+  `Get-FileHash .\USB-Guard.bat -Algorithm SHA256` before you run it.
+
+- **Documented.** [SECURITY.md](SECURITY.md) lists every privileged action the program
+  takes, why it takes it, and how to undo it.
+
 - **Not an antivirus.** It knows the USB worm families and their leftovers. Keep a real
   antivirus for everything else.
 
@@ -192,9 +203,18 @@ ships with every Windows 7 and later. No PowerShell 7, no changed default shell.
 ## Building It Yourself
 
 
-The program is `src/usb-guard.ps1`, plain PowerShell. `src/pack.ps1` gzips it, embeds it in
-`USB-Guard.bat` as base64, unpacks it again and compares the SHA256, so the released `.bat`
-is reproducible from the source in this repository.
+The program is `src/usb-guard.ps1`, plain PowerShell. `src/build.ps1` puts the batch launcher
+`src/header.bat` in front of it and writes `USB-Guard.bat`, then verifies that the body of the
+built file is byte for byte the source it started from and prints the SHA256.
+
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\src\build.ps1
+```
+
+
+The same file is both a Windows batch file and a PowerShell script: `cmd.exe` reads the first
+lines and stops at `exit /b`, PowerShell reads them as a comment block and runs what follows.
 
 
 ---

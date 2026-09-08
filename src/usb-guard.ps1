@@ -1,7 +1,7 @@
 ﻿param([switch]$Watch,[string]$Drive,[switch]$Bg)
 $ErrorActionPreference = 'SilentlyContinue'
 try{ [Console]::OutputEncoding = [Text.Encoding]::UTF8 }catch{}
-$VER = '1.13'
+$VER = '1.14'
 $ACC = 'Cyan'
 $ACC2 = 'Magenta'
 $W = 60
@@ -602,6 +602,7 @@ function Eligible($v){
     return $true
 }
 function Migrate-Base {
+    try{ Remove-Item -LiteralPath (Join-Path $env:TEMP 'usb-guard.ps1') -Force -EA SilentlyContinue }catch{}
     try{
         if(-not (Test-Path -LiteralPath $oldBase)){ return }
         if(Test-Path -LiteralPath (Join-Path $base 'quarantine')){ return }
@@ -614,8 +615,12 @@ function Migrate-Base {
 }
 function Get-BatSource {
     if($env:SELFBAT -and (Test-Path -LiteralPath $env:SELFBAT)){ return $env:SELFBAT }
+    if($PSCommandPath -and (Test-Path -LiteralPath $PSCommandPath)){ return $PSCommandPath }
     if(Test-Path -LiteralPath $batInstalled){ return $batInstalled }
     return $null
+}
+function Self-Line($file,$extra){
+    return ('& ([scriptblock]::Create([IO.File]::ReadAllText(''' + $file + '''))) ' + $extra).Trim()
 }
 function Pause-Key { Write-Host ''; TN ('  '+(S 'pk.enter')) 'DarkGray'; while($true){ $k=[Console]::ReadKey($true); if('Enter','Escape','LeftArrow','Spacebar' -contains "$($k.Key)"){ break } }; NL }
 function Lnk-Info($path){ try{ $s=(New-Object -ComObject WScript.Shell).CreateShortcut($path); return ("{0} {1}" -f $s.TargetPath,$s.Arguments) }catch{ return '' } }
@@ -1011,7 +1016,7 @@ function Test-WatcherTask {
     try{ & schtasks.exe /Query /TN $taskName 2>&1 | Out-Null; return ($LASTEXITCODE -eq 0) }catch{ return $false }
 }
 function Task-Xml {
-    $argLine='-NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -File "'+$psInstalled+'" -Watch'
+    $argLine='-NoProfile -WindowStyle Hidden -Command "'+(Self-Line $batInstalled '-Watch')+'"'
     $argLine=$argLine.Replace('&','&amp;').Replace('<','&lt;').Replace('>','&gt;')
     return @"
 <?xml version="1.0" encoding="UTF-16"?>
@@ -1054,12 +1059,21 @@ function Task-Xml {
 </Task>
 "@
 }
+function Stop-Watchers {
+    Get-CimInstance Win32_Process -Filter "Name='powershell.exe'" -EA SilentlyContinue |
+        Where-Object { $_.CommandLine -match '(?i)usb-guard\.(bat|ps1).*-Watch' -and $_.ProcessId -ne $PID } |
+        ForEach-Object { Stop-Process -Id $_.ProcessId -Force -EA SilentlyContinue }
+}
 function Install-Watcher {
     Write-Host ''; T (S 'wat.hinst') $ACC2
     Spin (S 'wat.scopy') {
         [IO.Directory]::CreateDirectory($base) | Out-Null
-        if($PSCommandPath -and (Test-Path -LiteralPath $PSCommandPath)){ Copy-Item -LiteralPath $PSCommandPath -Destination $psInstalled -Force }
-        $bs=Get-BatSource; if($bs){ Copy-Item -LiteralPath $bs -Destination $batInstalled -Force; Copy-Item -LiteralPath $bs -Destination (Join-Path $env:SystemDrive ('\'+$batName)) -Force }
+        Remove-Item -LiteralPath $psInstalled -Force -EA SilentlyContinue
+        $bs=Get-BatSource
+        if($bs){
+            if($bs -ne $batInstalled){ Copy-Item -LiteralPath $bs -Destination $batInstalled -Force }
+            Copy-Item -LiteralPath $batInstalled -Destination (Join-Path $env:SystemDrive ('\'+$batName)) -Force
+        }
     } | Out-Null
     $script:taskOk=$false
     Spin (S 'wat.srun') {
@@ -1071,8 +1085,8 @@ function Install-Watcher {
         Remove-Item -LiteralPath $xml -Force -EA SilentlyContinue
     } | Out-Null
     Spin (S 'wat.sstart') {
-        Get-CimInstance Win32_Process -Filter "Name='powershell.exe'" | Where-Object { $_.CommandLine -match 'usb-guard\.ps1.*-Watch' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force 2>$null }
-        Start-Process powershell -WindowStyle Hidden -ArgumentList '-NoProfile','-WindowStyle','Hidden','-ExecutionPolicy','Bypass','-File',$psInstalled,'-Watch'
+        Stop-Watchers
+        Start-Process powershell -WindowStyle Hidden -ArgumentList '-NoProfile','-WindowStyle','Hidden','-Command',(Self-Line $batInstalled '-Watch')
     } | Out-Null
     Write-Host ''
     if($script:taskOk){ T (S 'wat.done') 'Green'; T (S 'wat.done2') 'Green' } else { T (S 'wat.failed') 'Red' }
@@ -1083,12 +1097,12 @@ function Uninstall-Watcher {
         Remove-ItemProperty -Path $runKey -Name $runName -EA SilentlyContinue
         & schtasks.exe /Delete /TN $taskName /F 2>&1 | Out-Null
     } | Out-Null
-    Spin (S 'wat.sstop') { Get-CimInstance Win32_Process -Filter "Name='powershell.exe'" | Where-Object { $_.CommandLine -match 'usb-guard\.ps1.*-Watch' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force 2>$null } } | Out-Null
+    Spin (S 'wat.sstop') { Stop-Watchers } | Out-Null
     Write-Host ''; T (S 'wat.removed') 'Green'
 }
 
 function Start-Watcher {
-    $global:GuardPs = if(Test-Path -LiteralPath $psInstalled){ $psInstalled } else { $PSCommandPath }
+    $global:GuardBat = if(Test-Path -LiteralPath $batInstalled){ $batInstalled } else { Get-BatSource }
     $global:GuardRes = $reserved
     $global:GuardLnk = $lnkRx
     $global:GuardMsg = (S 'wat.popup')
@@ -1107,7 +1121,7 @@ function Start-Watcher {
         if($lnk -or $sysBad -or $arBad -or $recBad){
             Add-Type -AssemblyName System.Windows.Forms
             $r=[System.Windows.Forms.MessageBox]::Show(($global:GuardMsg -f $dn),'Usb-Guard','YesNo','Warning')
-            if($r -eq 'Yes'){ Start-Process powershell -Verb RunAs -ArgumentList '-NoProfile','-ExecutionPolicy','Bypass','-File',$global:GuardPs,'-Drive',$dn.TrimEnd(':') }
+            if($r -eq 'Yes'){ Start-Process -FilePath $global:GuardBat -Verb RunAs -ArgumentList ('-Drive '+$dn.TrimEnd(':')) }
         }
     } | Out-Null
     while($true){ Start-Sleep -Seconds 3600 }
@@ -1196,18 +1210,29 @@ function Check-Update {
         $tag=[regex]::Match($j,'"tag_name"\s*:\s*"v?([\d.]+)"').Groups[1].Value
         if(-not $tag){ return 'err' }
         if([version]$tag -le [version]$VER){ return 'ok' }
+        $bi=$j.IndexOf('"body"')
+        $want=if($bi -ge 0){ [regex]::Match($j.Substring($bi),'(?i)\b([0-9a-f]{64})\b').Groups[1].Value } else { '' }
+        if(-not $want){ return "new $tag" }
         $src=Get-BatSource; if(-not $src){ return "new $tag" }
         $tmp="$src.new"
         $rq=[Net.HttpWebRequest]::Create("https://github.com/$repo/releases/latest/download/USB-Guard.bat"); $rq.Timeout=15000; $rq.UserAgent='USB-Guard'; $rq.AllowAutoRedirect=$true
-        $rs=$rq.GetResponse(); $fs=[IO.File]::Create($tmp); $rs.GetResponseStream().CopyTo($fs); $fs.Close(); $rs.Close()
+        $rs=$rq.GetResponse()
+        if($rs.ResponseUri.Scheme -ne 'https' -or $rs.ResponseUri.Host -notmatch '(?i)(^|\.)(github\.com|githubusercontent\.com)$'){ $rs.Close(); return 'err' }
+        $fs=[IO.File]::Create($tmp); $rs.GetResponseStream().CopyTo($fs); $fs.Close(); $rs.Close()
+        $got=[BitConverter]::ToString([Security.Cryptography.SHA256]::Create().ComputeHash([IO.File]::ReadAllBytes($tmp))).Replace('-','')
         $txt=[IO.File]::ReadAllText($tmp)
-        if($txt.Length -lt 5000 -or $txt -notmatch 'USB-Guard'){ Remove-Item -LiteralPath $tmp -Force; return 'err' }
+        if($got -ne $want.ToUpper() -or $txt.Length -lt 5000 -or $txt -notmatch 'USB-Guard'){ Remove-Item -LiteralPath $tmp -Force; return "new $tag" }
         if((Test-Path -LiteralPath $batInstalled) -and $batInstalled -ne $src){ Copy-Item -LiteralPath $tmp -Destination $batInstalled -Force }
         return "apply $tag"
     }catch{ return 'err' }
 }
 function Apply-Update($tag){
     $src=Get-BatSource; $tmp="$src.new"
+    try{
+        $bk=Join-Path $base 'backup'
+        [IO.Directory]::CreateDirectory($bk) | Out-Null
+        Copy-Item -LiteralPath $src -Destination (Join-Path $bk ("USB-Guard-v{0}.bat" -f $VER)) -Force
+    }catch{}
     Write-Host ''; T (SF 'st.updating' $tag) 'Green'
     Start-Sleep -Milliseconds 800
     $cmd="timeout /t 2 /nobreak >nul & move /y `"$tmp`" `"$src`" & start `"`" `"$src`""
@@ -1228,7 +1253,9 @@ function Get-AvStatus {
 }
 function Start-Bg {
     try{
-        $ps=[PowerShell]::Create(); [void]$ps.AddCommand($PSCommandPath).AddParameter('Bg')
+        $self=Get-BatSource
+        if(-not $self){ throw 'no source' }
+        $ps=[PowerShell]::Create(); [void]$ps.AddScript('param($p) & ([scriptblock]::Create([IO.File]::ReadAllText($p))) -Bg').AddArgument($self)
         $script:bgJob=@{Ps=$ps; H=$ps.BeginInvoke()}
     }catch{ $script:bgJob=$null; $script:upd='err'; $script:scanned=$true }
 }

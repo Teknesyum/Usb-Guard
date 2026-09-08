@@ -1,6 +1,29 @@
 # Changelog
 
 
+## v1.14
+
+- **The payload is gone. The file is readable.** `USB-Guard.bat` used to carry the program as
+  a gzip + base64 blob that was written to `%TEMP%` and run from there. It now carries the
+  PowerShell source in plain text: a short batch launcher, then the program itself.
+  Open the file in Notepad and read every line of it. Nothing is decoded, nothing is written
+  to a temporary folder, and `-ExecutionPolicy Bypass` is no longer used, because the script
+  runs from memory rather than from disk.
+
+- **The released file is the source.** `src/build.ps1` joins `src/header.bat` and
+  `src/usb-guard.ps1` into `USB-Guard.bat` and checks that the two halves match. The release
+  notes carry the SHA256 of the file.
+
+- **The update check verifies what it downloads.** It compares the SHA256 of the downloaded
+  file against the hash published in the release notes, refuses redirects that leave
+  `github.com` / `githubusercontent.com`, and keeps the previous version under
+  `C:\ProgramData\Usb-Guard\backup` before replacing itself. A file that fails any of these
+  checks is deleted and reported as "new version available" instead of being installed.
+
+- The watcher and the background scan start from the same single file; no `usb-guard.ps1` is
+  left in `%TEMP%` or in the install folder any more, and an old one is deleted on first run.
+
+
 ## v1.13
 
 - **Machine-wide, not per-account.** Quarantine, the saved language and the installed copy

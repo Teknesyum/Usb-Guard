@@ -179,6 +179,16 @@ Düz bir `.bat` olduğu için **cmd** çalıştırır. İçeride Windows 7 ve so
 
 - **Yerel.** Tek ağ çağrısı açılıştaki GitHub sürüm denetimidir; bilgisayardan veri çıkmaz.
 
+- **Okunabilir.** `USB-Guard.bat` düz metin dosyasıdır. Sağ tıkla, Düzenle de: kısa bir bat
+  başlığı ve ardından `src/usb-guard.ps1` ile birebir aynı PowerShell kaynağı. Hiçbir şey
+  sıkıştırılmaz, kodlanmaz, çalışmadan önce geçici klasöre açılmaz.
+
+- **Doğrulanabilir.** Her yayın notunda dosyanın SHA256'sı yazar. Çalıştırmadan önce
+  `Get-FileHash .\USB-Guard.bat -Algorithm SHA256` ile karşılaştır.
+
+- **Belgeli.** [SECURITY.md](SECURITY.md) programın yaptığı her ayrıcalıklı işi, gerekçesini
+  ve nasıl geri alınacağını tablo hâlinde listeler.
+
 - **Antivirüs değildir.** USB solucan ailelerini ve kalıntılarını tanır. Gerisi için gerçek
   bir antivirüs kullan.
 
@@ -189,9 +199,18 @@ Düz bir `.bat` olduğu için **cmd** çalıştırır. İçeride Windows 7 ve so
 ## Kendin Derlemek İstersen
 
 
-Program `src/usb-guard.ps1`, düz PowerShell. `src/pack.ps1` onu gzip'ler, `USB-Guard.bat`
-içine base64 olarak gömer, geri açar ve SHA256'yı karşılaştırır; yayınlanan `.bat` bu
-depodaki kaynaktan yeniden üretilebilir.
+Program `src/usb-guard.ps1`, düz PowerShell. `src/build.ps1` onun önüne `src/header.bat`
+başlığını koyup `USB-Guard.bat` dosyasını yazar, sonra üretilen dosyanın gövdesinin kaynakla
+birebir aynı olduğunu doğrular ve SHA256'yı yazdırır.
+
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\src\build.ps1
+```
+
+
+Aynı dosya hem bat hem PowerShell: `cmd.exe` ilk satırları okuyup `exit /b` ile durur,
+PowerShell aynı satırları yorum bloğu sayıp devamını çalıştırır.
 
 
 ---
