@@ -1,0 +1,97 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to build and publish (e.g. v1.19)
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || github.ref }}
+
+      - name: Version matches the tag
+        shell: pwsh
+        run: |
+          $tag = if ($env:INPUT_TAG) { $env:INPUT_TAG } else { $env:GITHUB_REF -replace '^refs/tags/', '' }
+          $ver = (Select-String -Path src/usb-guard.ps1 -Pattern "^\`$VER = '(.+)'").Matches[0].Groups[1].Value
+          "tag $tag / VER $ver"
+          if ("v$ver" -ne $tag) { throw "tag $tag does not match `$VER $ver in src/usb-guard.ps1" }
+          "VER=$ver" >> $env:GITHUB_ENV
+          "TAG=$tag" >> $env:GITHUB_ENV
+        env:
+          INPUT_TAG: ${{ github.event.inputs.tag }}
+
+      - name: Build from source
+        shell: pwsh
+        run: |
+          $before = (Get-FileHash USB-Guard.bat -Algorithm SHA256).Hash
+          ./src/build.ps1
+          $after = (Get-FileHash USB-Guard.bat -Algorithm SHA256).Hash
+          "committed : $before"
+          "rebuilt   : $after"
+          if ($before -ne $after) { throw 'USB-Guard.bat in the tag is not what src/build.ps1 produces; rebuild and commit it' }
+          "SHA=$after" >> $env:GITHUB_ENV
+          "BYTES=$((Get-Item USB-Guard.bat).Length)" >> $env:GITHUB_ENV
+
+      - name: It parses
+        shell: pwsh
+        run: |
+          $e = $null
+          [void][System.Management.Automation.Language.Parser]::ParseFile((Resolve-Path USB-Guard.bat), [ref]$null, [ref]$e)
+          if ($e.Count) { $e | ForEach-Object { "$($_.Extent.StartLineNumber): $($_.Message)" }; throw 'the built file does not parse' }
+          'PARSE OK'
+
+      - name: Detection tests
+        shell: pwsh
+        run: ./tools/t117.ps1
+
+      - name: Name tests
+        shell: pwsh
+        run: |
+          $out = ./tools/tlabel.ps1 | Out-String
+          $out
+          if ($out -match 'FAIL') { throw 'tools/tlabel.ps1 reported a failure' }
+
+      - name: Portable archive for winget
+        shell: pwsh
+        run: |
+          Compress-Archive -Path USB-Guard.bat -DestinationPath "USB-Guard-$env:VER.zip" -Force
+          $z = (Get-FileHash "USB-Guard-$env:VER.zip" -Algorithm SHA256).Hash
+          "zip sha256: $z"
+          "ZIPSHA=$z" >> $env:GITHUB_ENV
+
+      - name: Publish
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cat > notes.md <<EOF
+          See CHANGELOG.md for what changed in $TAG.
+
+          | file | sha256 | bytes |
+          | --- | --- | --- |
+          | \`USB-Guard.bat\` | \`$SHA\` | $BYTES |
+          | \`USB-Guard-$VER.zip\` | \`$ZIPSHA\` | |
+
+          Built by GitHub Actions from the tag, straight out of \`src/build.ps1\`.
+          The run verifies that the committed \`USB-Guard.bat\` is byte-for-byte what the
+          source produces, so the hash above can be reproduced from this repository alone.
+          EOF
+          if gh release view "$TAG" -R "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release upload "$TAG" -R "$GITHUB_REPOSITORY" USB-Guard.bat "USB-Guard-$VER.zip" --clobber
+            gh release edit "$TAG" -R "$GITHUB_REPOSITORY" --notes-file notes.md
+          else
+            gh release create "$TAG" -R "$GITHUB_REPOSITORY" -t "$TAG" --notes-file notes.md \
+              USB-Guard.bat "USB-Guard-$VER.zip"
+          fi
