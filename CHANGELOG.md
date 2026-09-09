@@ -1,6 +1,31 @@
 # Changelog
 
 
+## v1.19
+
+The drive keeps its name.
+
+- **Immunity no longer throws the drive's name away.** Windows shows a removable drive under
+  the `label=` line inside `autorun.inf`, ahead of the real volume label. Immunity replaces
+  that file with a locked folder of the same name, and until now it simply deleted it — with
+  no copy in quarantine — so the name the drive had shown for years disappeared for good.
+  The name is now read out of `autorun.inf` before the file is destroyed and written to the
+  filesystem's own volume label instead. A volume label is metadata, not a file: a worm
+  cannot hijack it by dropping an `autorun.inf`, so the name survives every later cleanup.
+
+- **A drive with no name is offered one.** When the volume label is empty and `autorun.inf`
+  carried nothing to recover, USB-Guard asks once, in a single line, whether you want to name
+  the drive, and writes what you type. Esc or N skips it.
+
+- The name is sanitised before it is written: control characters, path and wildcard
+  characters and shell metacharacters are stripped, and the length is capped at 11 characters
+  on FAT/exFAT and 32 on NTFS. The value comes from a file an attacker controls, so it is
+  never passed to a shell — the label is set through `SetVolumeLabelW`.
+
+- New test: `tools	label.ps1` covers the parsing, the sanitiser and the case where
+  `autorun.inf` is already the locked folder.
+
+
 ## v1.18
 
 A screen-and-keyboard release. Nothing changed in what USB-Guard detects.

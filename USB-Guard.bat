@@ -35,7 +35,7 @@ exit /b
 param([switch]$Watch,[string]$Drive,[switch]$Bg)
 $ErrorActionPreference = 'SilentlyContinue'
 try{ [Console]::OutputEncoding = [Text.Encoding]::UTF8 }catch{}
-$VER = '1.18'
+$VER = '1.19'
 $ACC = 'Cyan'
 $ACC2 = 'Magenta'
 $W = 60
@@ -128,6 +128,13 @@ $STRTR = @{
  'dr.askcopy'   = "  USB-Guard'ı bu USB'ye de kopyalayayım mı? (E/H): "
  'dr.copied'    = "  Kopyalandı: {0}"
  'dr.nocopy'    = "  Kopyalanmadı."
+ 'lb.head'      = "  [ İsim ]"
+ 'lb.sfix'      = "Sürücü Adını Geri Yaz: {0}"
+ 'lb.ask'       = "  Bu USB'nin adı yok. Ad koymak ister misiniz? (E/H): "
+ 'lb.prompt'    = "  Ad (en çok {0} karakter): "
+ 'lb.set'       = "  Ad kondu: {0}"
+ 'lb.fail'      = "  Ad yazılamadı; sürücü yazma korumalı olabilir."
+ 'lb.skip'      = "  Ad konmadı."
 
  'fnd.ushell'   = "Kullanıcı Shell = {0}"
  'fnd.startup'  = "Başlangıç: {0}"
@@ -344,6 +351,13 @@ $STREN = @{
  'dr.askcopy'   = "  Copy USB-Guard onto this USB as well? (Y/N): "
  'dr.copied'    = "  Copied: {0}"
  'dr.nocopy'    = "  Not copied."
+ 'lb.head'      = "  [ Name ]"
+ 'lb.sfix'      = "Write The Drive Name Back: {0}"
+ 'lb.ask'       = "  This USB has no name. Would you like to give it one? (Y/N): "
+ 'lb.prompt'    = "  Name (at most {0} characters): "
+ 'lb.set'       = "  Name set: {0}"
+ 'lb.fail'      = "  Could not write the name; the drive may be write-protected."
+ 'lb.skip'      = "  No name set."
 
  'fnd.ushell'   = "User Shell = {0}"
  'fnd.startup'  = "Startup: {0}"
@@ -665,6 +679,78 @@ function Lock-Immunity($p,$ntfs){
     attrib +s +h +r "$p" 2>$null | Out-Null
     if($ntfs){ icacls "$p" /deny "*S-1-1-0:(OI)(CI)(WD,AD,DC,DE)" /q 2>$null | Out-Null }
 }
+function Read-ArLabel($root){
+    $p=Join-Path $root 'autorun.inf'
+    $it=Get-Item -LiteralPath $p -Force -EA SilentlyContinue
+    if(-not $it -or $it.PSIsContainer){ return '' }
+    $txt=''
+    try{ $txt=[IO.File]::ReadAllText($p) }catch{ return '' }
+    $m=[regex]::Match($txt,'(?im)^[ \t]*label[ \t]*=[ \t]*(.+?)[ \t]*$')
+    if(-not $m.Success){ return '' }
+    return (Clean-VolLabel $m.Groups[1].Value)
+}
+function Clean-VolLabel($n,$max=32){
+    $n="$n".Trim().Trim('"').Trim()
+    $n=($n -replace '[\x00-\x1f]','')
+    $n=($n -replace '[*?/\\|.,;:+=\[\]<>"&^%!`$]','')
+    $n=$n.Trim()
+    if($n.Length -gt $max){ $n=$n.Substring(0,$max) }
+    return $n.Trim()
+}
+function Set-VolLabel($letter,$name){
+    if(-not $name){ return $false }
+    try{
+        if(-not ('Win32v' -as [type])){
+            Add-Type -TypeDefinition @'
+using System;using System.Runtime.InteropServices;
+public class Win32v{
+ [DllImport("kernel32.dll", CharSet=CharSet.Unicode, SetLastError=true)] public static extern bool SetVolumeLabelW(string root, string label);
+}
+'@
+        }
+        [void][Win32v]::SetVolumeLabelW("$letter`:\", $name)
+    }catch{ return $false }
+    $v=Get-CimInstance Win32_LogicalDisk -Filter "DeviceID='$letter`:'" -EA SilentlyContinue
+    return ("$($v.VolumeName)" -eq $name)
+}
+function Ask-Line($max){
+    Drain-Keys
+    $sb=New-Object Text.StringBuilder
+    while($true){
+        $k=[Console]::ReadKey($true)
+        if($k.Key -eq 'Enter'){ Write-Host ''; break }
+        if($k.Key -eq 'Escape'){ Write-Host ''; return '' }
+        if($k.Key -eq 'Backspace'){ if($sb.Length -gt 0){ [void]$sb.Remove($sb.Length-1,1); Write-Host "`b `b" -NoNewline }; continue }
+        $c=$k.KeyChar
+        if([int]$c -lt 32){ continue }
+        if($sb.Length -ge $max){ continue }
+        [void]$sb.Append($c); Write-Host $c -NoNewline -ForegroundColor White
+    }
+    $script:bol=$true
+    return (Clean-VolLabel $sb.ToString() $max)
+}
+function Fix-VolLabel($letter,$root,$fs,$arLbl){
+    $max=$(if($fs -eq 'FAT32' -or $fs -eq 'FAT' -or $fs -eq 'exFAT'){ 11 } else { 32 })
+    $cur=''
+    $v=Get-CimInstance Win32_LogicalDisk -Filter "DeviceID='$letter`:'" -EA SilentlyContinue
+    if($v){ $cur="$($v.VolumeName)" }
+    if($cur){ return }
+    T (S 'lb.head') $ACC2
+    if($arLbl){
+        $want=Clean-VolLabel $arLbl $max
+        if($want){
+            $ok=Spin (SF 'lb.sfix' $want) { Set-VolLabel $letter $want }
+            if($ok){ T (SF 'lb.set' $want) 'Green' } else { T (S 'lb.fail') 'DarkYellow' }
+            return
+        }
+    }
+    TN (S 'lb.ask') 'Yellow'
+    if(-not (Ask-YN)){ T (S 'lb.skip') 'DarkGray'; return }
+    TN (SF 'lb.prompt' $max) 'Yellow'
+    $nm=Ask-Line $max
+    if(-not $nm){ T (S 'lb.skip') 'DarkGray'; return }
+    if(Set-VolLabel $letter $nm){ T (SF 'lb.set' $nm) 'Green' } else { T (S 'lb.fail') 'DarkYellow' }
+}
 function Get-UsbLogical {
     $out=@()
     try{
@@ -847,6 +933,7 @@ function Process-Drive($dsk){
     $allImm=($immState -eq 'full')
     $ins=Inspect-Drive $root $label
     $infected=$ins.Infected
+    $arLbl=Read-ArLabel $root
 
     Write-Host ''; Bar
     LB 'dr.target' $script:wDrv 'DarkGray'; T $root 'White'
@@ -888,6 +975,7 @@ function Process-Drive($dsk){
 
     T (S 'dr.himmune') $ACC2
     foreach($n in $targets){ $was=Test-Immunized (Join-Path $root $n); Spin (SF 'dr.slock' $n) { Lock-Immunity (Join-Path $root $n) $ntfs } ($(if($was){(S 'sp.already')}else{(S 'sp.ok')})) $(if($was){'DarkGray'}else{'Green'}) | Out-Null }
+    Fix-VolLabel $letter $root $fs $arLbl
     if(-not $ntfs){ Write-Host ''; T (SF 'dr.noacl' $fs) 'DarkYellow' }
     Write-Host ''; T (SF 'dr.done' $root) 'Green'
     if($q){ T (SF 'dr.quar' $q) 'Gray' }

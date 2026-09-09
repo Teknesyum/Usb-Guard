@@ -10,6 +10,7 @@ fonksiyonları doğrudan çağırır. Yollar `$PSScriptRoot`'a göre çözülür
 - `tpc.ps1` — gerçek PC taraması, süre ve bulgu sayısı
 - `tlines.ps1` — `subst X:` ile bitiş ekranı, satır sayısı
 - `twrap.ps1` — cetvelli çıktı, satır genişliği
+- `tlabel.ps1` — `autorun.inf` etiket ayrıştırma ve ad temizleme
 
 Çalıştırma: `powershell -NoProfile -ExecutionPolicy Bypass -File tools\t117.ps1`
 
