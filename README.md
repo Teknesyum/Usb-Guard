@@ -32,6 +32,18 @@ payload so the next computer catches it too.
 USB-Guard was written against the family that uses a hidden `sysvolume` folder, and it also
 covers the older VBS and JS worms that spread the same way.
 
+It is no longer only about that, though. The scope is **everything that reaches you as a
+file on a removable drive**: a hidden payload whatever its extension claims to be, a
+shortcut that runs something else, a folder disguised as the Recycle Bin, a name reversed
+with a right-to-left override, something parked in `System Volume Information`, a miner, a
+signed program with an unsigned DLL beside it. Cleaning the drive is half of it; the other
+half is closing the door — decoy locks on the drive, the removable-disk execute switch, the
+script engine switch, and a look at the startup points on the PC itself.
+
+What stays out of scope — BadUSB and HID, file infectors, disk images, firmware — is listed
+under [What It Does Not Do](#what-it-does-not-do). It is a short list, and it is short on
+purpose: those need a different kind of tool, not a bigger version of this one.
+
 
 ---
 

@@ -33,6 +33,18 @@ da kapsın diye yükünü geride bıraktı.
 USB-Guard gizli `sysvolume` klasörü kullanan aileye karşı yazıldı; aynı yolla yayılan eski
 VBS ve JS solucanlarını da kapsar.
 
+Ama artık yalnız o değil. Kapsam, **çıkarılabilir bir sürücüde sana dosya olarak ulaşan her
+şey**: uzantısı ne iddia ederse etsin gizli bir yük, başka bir şey çalıştıran bir kısayol,
+Geri Dönüşüm Kutusu kılığına girmiş bir klasör, sağdan sola yazım işaretiyle ters çevrilmiş
+bir ad, `System Volume Information` içine park edilmiş bir dosya, bir madenci, yanında
+imzasız DLL duran imzalı bir program. Sürücüyü temizlemek işin yarısı; diğer yarısı kapıyı
+kapatmak — sürücüdeki tuzak kilitler, çıkarılabilir diskten çalıştırma anahtarı, betik
+motoru anahtarı ve bilgisayarın kendi başlangıç noktalarına bakmak.
+
+Kapsam dışında kalanlar — BadUSB ve HID, dosya bulaştırıcıları, disk kalıpları, ürün
+yazılımı — [Yapmadıkları](#yapmadıkları) başlığında yazıyor. Liste kısa ve bilerek
+kısa: bunlar için bunun büyüğü değil, başka türden bir araç gerekiyor.
+
 
 ---
 
