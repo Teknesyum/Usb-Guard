@@ -62,3 +62,19 @@ Ayrıntı ve seçenekler işin sonundaki raporda.
 1 ve 2 aynı duvara çarptı: ikisi de "yayına `.bat` dışında bir dosya girsin mi"
 sorusuna bağlı. Winget `portable` yalnız çalıştırılabilir ikili alıyor, Authenticode
 imzası da `.bat`'e gömülemiyor. Bu bir kod işi değil, ürün kararı; kullanıcıya soruldu.
+
+
+## Karar — 1 ve 2 ertelendi
+
+Kullanıcı kararı fable'a bıraktı. Cevap birebir `docs/netlestirme/002` içinde.
+
+Karar **B**: tek dosya `.bat` kalıyor. A'nın bedeli sabit, getirisi ölçülen talep sıfırken
+sıfır; kendinden imzalı sertifika SmartScreen'de bir şey kazandırmıyor. C'nin de hizmet
+ettiği kimse yok — sıradan kullanıcı Chocolatey kurmaz.
+
+Uygulandı: winget manifestleri `trash/winget/`e, `docs/danisma/008-guven.md` 4. ve 9.
+maddeler "ERTELENDİ — eşik: dış talep" işaretlendi, iki README'ye kurulum paketinin neden
+olmadığı tek paragraf olarak girdi.
+
+Yeniden açma eşiği: ilk dış issue ya da yayın başına 50+ indirme. O noktada önce
+Chocolatey; EV/OV bütçesi çıkarsa `.exe`.

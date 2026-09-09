@@ -27,7 +27,7 @@ Daha temiz alternatif: **iki dosya, tek zip** — `USB-Guard.bat` (10 satır, sa
 1. **Kaynağı depoya koy.** `.gitignore`'dan `*.ps1` çıkar, `usb-guard.ps1` ve `pack.ps1` commit. Bu her şeyin ön şartı; yapılmadan diğerleri anlamsız.
 2. **Paketlemeyi kaldır** (madde 1). Dağıtılan dosya = depodaki dosya, byte byte.
 3. **Yeniden üretilebilir yayın.** GitHub Actions ile release'i CI üretsin; yayın notunda SHA256 yazsın. Kullanıcı `Get-FileHash` ile karşılaştırabilsin. Actions loguna herkes bakabilir: "bu dosya bu kaynaktan bu işlemle çıktı."
-4. **Self-signed sertifika ile Authenticode imzası** (`New-SelfSignedCertificate -Type CodeSigningCert`, `Set-AuthenticodeSignature`). SmartScreen'i ikna etmez ama (a) dosya bütünlüğünü kanıtlar, (b) güncelleme doğrulamasında kullanılır (bölüm 5), (c) sertifika parmak izi README'de yayınlanır. Bat'a Authenticode gömülmez; ps1'e gömülür — iki dosya modelinin bir avantajı daha.
+4. **[ERTELENDİ — eşik: dış talep]** **Self-signed sertifika ile Authenticode imzası** (`New-SelfSignedCertificate -Type CodeSigningCert`, `Set-AuthenticodeSignature`). SmartScreen'i ikna etmez ama (a) dosya bütünlüğünü kanıtlar, (b) güncelleme doğrulamasında kullanılır (bölüm 5), (c) sertifika parmak izi README'de yayınlanır. Bat'a Authenticode gömülmez; ps1'e gömülür — iki dosya modelinin bir avantajı daha.
 5. **VirusTotal'a her sürümü kendin yükle**, sonucu README'ye linkle. Takılma varsa Microsoft Defender'ın "Submit a file for malware analysis" formuyla yanlış pozitif bildir; tek geliştirici için ücretsiz ve genelde 1-3 günde temizliyorlar. Kaspersky, ESET, Avast benzer formlar sunar.
 6. **Davranış listesini yumuşat:**
    - `-ExecutionPolicy Bypass` → `RemoteSigned` veya hiç (bellekten yürütme).
@@ -36,7 +36,7 @@ Daha temiz alternatif: **iki dosya, tek zip** — `USB-Guard.bat` (10 satır, sa
    - Kendini güncelleme varsayılan **kapalı** ya da yalnız "yeni sürüm var" bildirimi; indirme kullanıcı onayıyla (bölüm 5).
 7. **SECURITY.md ve `docs/threat-model`** (İngilizce): programın yaptığı her ayrıcalıklı işi tablo hâlinde listele — ne, neden, geri alınabilir mi, nerede log'lanır. AV analistleri bu dosyayı okur.
 8. **Kayıt tut**: program her çalışmada `%LOCALAPPDATA%\Usb-Guard\log.txt`'ye ne sildiğini, ne taşıdığını yazsın. Karantina manifesti zaten var; log da olsun. "Neyi değiştirdi" sorusuna cevap.
-9. **Winget manifest** gönder (ücretsiz). Winget'e alınmış olmak bir güven sinyali; PR süreci Microsoft'un temel taramasından geçer.
+9. **[ERTELENDİ — eşik: dış talep]** **Winget manifest** gönder (ücretsiz). Winget'e alınmış olmak bir güven sinyali; PR süreci Microsoft'un temel taramasından geçer.
 
 ## 3. Para isteyen adımlar
 
@@ -74,3 +74,23 @@ Mevcut hâl en zayıf nokta: imzasız dosya indirip kendini üzerine yazmak, ile
 - Geri alma: eski sürümü `%LOCALAPPDATA%\Usb-Guard\backup\` altına koy, yeni sürüm ilk çalışmada çökerse eskiyi geri yaz.
 - Sürüm düşürmeyi engelle: indirilen sürüm numarası mevcuttan küçükse reddet.
 - Güncelleme kontrolünü açılışta değil, kullanıcı menüden istediğinde ya da en fazla haftada bir yap; her açılışta ağa çıkan bat AV için ayrı bir bayrak.
+
+
+---
+
+## Erteleme notu — 9 Eylül 2026
+
+4. ve 9. maddeler ertelendi. Gerekçe ve ölçüm: `docs/netlestirme/002`.
+
+Kısaca: winget `portable` kurulum türü `.bat` kabul etmiyor (`winget validate` doğrudan
+reddediyor), Authenticode da `.bat`'e gömülemiyor. İkisi de "yayına derlenmiş ikili girsin
+mi" sorusuna bağlı. Ölçülen talep sıfır — yıldız 1, fork 0, issue 0, yayın başına 1-2
+indirme — ve kendinden imzalı sertifika SmartScreen'de hiçbir şey kazandırmıyor. Talep
+yokken projenin tek somut güven iddiasını feda etmek net kayıp.
+
+Yeniden açma eşiği: ilk dış issue ya da yayın başına 50+ indirme. O noktada önce
+Chocolatey; EV/OV sertifika bütçesi çıkarsa `.exe` yolu.
+
+Yerine geçen güven sinyali: CI'ın doğruladığı yeniden üretilebilir derleme (etiketten
+derler, depodaki dosya bayt bayt aynı değilse yayını durdurur), sürüm notundaki sha256
+tablosu ve VirusTotal otomasyonu.

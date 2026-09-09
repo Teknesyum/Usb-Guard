@@ -180,6 +180,13 @@ menu.
 
 1. Download **`USB-Guard.bat`**.
 
+There is no installer and no package-manager entry, on purpose. USB-Guard is one file you
+can open in a text editor and read before you run it, and every release is rebuilt from this
+repository by CI, which refuses to publish unless the committed file is byte-for-byte what
+the source produces — the sha256 in the release notes is reproducible from the source alone.
+A package would mean shipping a compiled binary instead, and that trade is not worth making.
+
+
 2. Double-click it. Windows asks for admin, which the ACL locks and the PC cleanup need.
 
 3. On the first run, press **1** for English or **2** for Turkish. The choice is remembered.

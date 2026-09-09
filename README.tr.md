@@ -177,6 +177,13 @@ Menüden kurulur. Virüslü USB takıldığında Evet / Hayır sorusuyla temizle
 
 1. **`USB-Guard.bat`** dosyasını indir.
 
+Kurulum paketi ve paket yöneticisi kaydı bilerek yok. USB-Guard tek dosyadır; çalıştırmadan
+önce metin editöründe açıp okuyabilirsin. Her yayın bu depodan CI tarafından yeniden
+derlenir ve depodaki dosya yeniden derlenenle bayt bayt aynı değilse yayın durur — sürüm
+notundaki sha256 yalnız kaynaktan tekrar üretilebilir. Paket, bunun yerine derlenmiş bir
+ikili dağıtmak demekti; bu takas değmiyor.
+
+
 2. Çift tıkla. Windows yönetici onayı ister; ACL kilitleri ve PC temizliği için gerekli.
 
 3. İlk açılışta İngilizce için **1**, Türkçe için **2** tuşuna bas. Seçim hatırlanır.
