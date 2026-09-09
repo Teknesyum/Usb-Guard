@@ -1,0 +1,46 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.6.0.schema.json
+
+PackageIdentifier: Teknesyum.UsbGuard
+PackageVersion: "1.19"
+PackageLocale: en-US
+Publisher: Teknesyum
+PublisherUrl: https://github.com/Teknesyum
+PublisherSupportUrl: https://github.com/Teknesyum/Usb-Guard/issues
+PackageName: USB-Guard
+PackageUrl: https://github.com/Teknesyum/Usb-Guard
+License: AGPL-3.0-or-later
+LicenseUrl: https://github.com/Teknesyum/Usb-Guard/blob/main/LICENSE
+Copyright: Copyright (c) Teknesyum
+ShortDescription: Cleans the shortcut worm off a USB stick, immunizes the stick, and checks the PC behind it.
+Description: |-
+  USB-Guard is a single-file console tool for the shortcut worm — the infection that hides
+  every folder on a USB stick and leaves a matching .lnk in its place, so the files look
+  present and open the worm instead.
+
+  It quarantines the payload rather than deleting it, moves the hidden folders back out,
+  clears the hidden and system attributes, and then immunizes the stick: the names the worm
+  needs are turned into locked folders it cannot recreate. It also scans the PC behind the
+  stick for the startup entries the worm leaves there, and can switch off script-host
+  execution and execution from removable drives.
+
+  It is not an antivirus and does not replace one. What it deliberately leaves alone is
+  listed in the README under "What It Does Not Do".
+Moniker: usb-guard
+Tags:
+  - antimalware
+  - autorun
+  - cleaner
+  - console
+  - lnk
+  - powershell
+  - removable-drive
+  - security
+  - shortcut-virus
+  - usb
+  - worm
+ReleaseNotesUrl: https://github.com/Teknesyum/Usb-Guard/releases/tag/v1.19
+Documentations:
+  - DocumentLabel: README
+    DocumentUrl: https://github.com/Teknesyum/Usb-Guard/blob/main/README.md
+ManifestType: defaultLocale
+ManifestVersion: 1.6.0

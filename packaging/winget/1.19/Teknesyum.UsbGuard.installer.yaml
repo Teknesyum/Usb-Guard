@@ -1,0 +1,18 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.6.0.schema.json
+
+PackageIdentifier: Teknesyum.UsbGuard
+PackageVersion: "1.19"
+MinimumOSVersion: 10.0.0.0
+InstallerType: zip
+NestedInstallerType: portable
+NestedInstallerFiles:
+  - RelativeFilePath: USB-Guard.bat
+    PortableCommandAlias: usb-guard
+UpgradeBehavior: install
+ReleaseDate: 2026-09-09
+Installers:
+  - Architecture: neutral
+    InstallerUrl: https://github.com/Teknesyum/Usb-Guard/releases/download/v1.19/USB-Guard-1.19.zip
+    InstallerSha256: 5DB7960B5EDD64F1CD0E9411ABF7E583C1A13AA29668A163FD6B0257665B34D2
+ManifestType: installer
+ManifestVersion: 1.6.0
