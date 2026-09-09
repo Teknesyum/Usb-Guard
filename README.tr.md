@@ -219,8 +219,10 @@ Düz bir `.bat` olduğu için **cmd** çalıştırır. İçeride Windows 7 ve so
 - **Taranmış.** v1.15 yayın dosyası VirusTotal'a yüklendi, temiz döndü, hiçbir motor
   işaretlemedi:
   [2d5c45b6…f368 raporu](https://www.virustotal.com/gui/file/2d5c45b642671c465f9d2cea945b693e61003b5fa2f5054a60491c7a9374f368).
-  Linkteki hash o dosyanın hash'idir. Sonraki sürümler otomatik yüklenmiyor — dosya düz
-  metin, kendin de okuyabilirsin.
+  Linkteki hash o dosyanın hash'idir. Bundan sonra her ana sürüm, onu yayınlayan
+  [iş akışı](.github/workflows/virustotal.yml) tarafından VirusTotal'a yükleniyor ve rapor
+  bağlantısı o sürümün notlarına ekleniyor. Aradaki sürümler yüklenmiyor — dosya düz metin,
+  kendin de okuyabilirsin.
 
 - **Belgeli.** [SECURITY.md](SECURITY.md) programın yaptığı her ayrıcalıklı işi, gerekçesini
   ve nasıl geri alınacağını tablo hâlinde listeler.
