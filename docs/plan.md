@@ -19,7 +19,7 @@ Değer saldırganın denetimindeki dosyadan geldiği için temizleniyor ve kabu�
 verilmiyor — `SetVolumeLabelW`. Test: `tools/tlabel.ps1`.
 
 
-## 3 — CI ile yeniden üretilebilir yayın
+## 3 — CI ile yeniden üretilebilir yayın (bitti, `131b72e`)
 
 `.github/workflows/release.yml`. Etiket itilince `windows-latest` üzerinde:
 
@@ -35,7 +35,7 @@ Böylece hash'i herkes depodan yeniden üretebilir; derlemeyi elle yapıp yükle
 Mevcut `virustotal.yml` yayın açılışına bağlı olduğu için kendiliğinden zincirlenir.
 
 
-## 1 — Winget manifesti
+## 1 — Winget manifesti (bloke, `b0` — winget `.bat` kabul etmiyor)
 
 `.bat` winget'in tanıdığı bir kurulum türü değil. Yol: `InstallerType: zip` +
 `NestedInstallerType: portable`, arşivin içindeki `USB-Guard.bat` takma adla bağlanır.
@@ -45,7 +45,7 @@ Manifest üç dosyadır (`version`, `installer`, `locale`), depoda `packaging/wi
 altında durur; `microsoft/winget-pkgs` deposuna PR olarak gider.
 
 
-## 2 — Kendinden imzalı Authenticode
+## 2 — Kendinden imzalı Authenticode (bekliyor — 1. madde ile aynı karara bağlı)
 
 En pahalısı ve tek başına mimariyi değiştiren madde: Authenticode imzası `.bat`'e
 gömülemez, `.ps1`'e gömülür. Ürünün tamamı "tek dosya polyglot" fikri üzerine kurulu
@@ -53,3 +53,12 @@ olduğu için imza, iki dosyalı dağıtıma geçmeden eklenemez.
 
 Bu yüzden 2. madde bir kod işi değil, bir dağıtım kararıdır ve kullanıcıya sorulacaktır.
 Ayrıntı ve seçenekler işin sonundaki raporda.
+
+
+## Turun sonucu
+
+0 ve 3 bitti, v1.19 yayında ve hash zinciri CI tarafından doğrulanıyor.
+
+1 ve 2 aynı duvara çarptı: ikisi de "yayına `.bat` dışında bir dosya girsin mi"
+sorusuna bağlı. Winget `portable` yalnız çalıştırılabilir ikili alıyor, Authenticode
+imzası da `.bat`'e gömülemiyor. Bu bir kod işi değil, ürün kararı; kullanıcıya soruldu.
