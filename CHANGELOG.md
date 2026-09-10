@@ -1,6 +1,26 @@
 # Changelog
 
 
+## v1.20
+
+The menu stops flickering in a short window.
+
+- **The menu no longer redraws over itself once the console has scrolled.** Every redraw
+  started at the row remembered before the first paint. When the list was taller than the
+  window the console scrolled, that row went stale, and each keypress painted in the wrong
+  place and scrolled again — a steady flicker that only stopped when the window was made
+  wider. The starting row is now recomputed from the cursor after every paint, so it stays
+  correct however far the view has scrolled.
+
+- **The window is sized before the first paint, not after it.** It used to be measured once
+  the menu was already on screen, which meant the first frame did the scrolling that caused
+  the drift. If the list still does not fit at the largest window the console allows, the
+  blank line between entries is dropped and the list is drawn at half the height.
+
+- **A redraw only happens when something changed.** The loop repainted the whole list before
+  every keypress, including keys that moved nothing.
+
+
 ## v1.19
 
 The drive keeps its name.

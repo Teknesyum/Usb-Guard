@@ -1,7 +1,7 @@
-﻿param([switch]$Watch,[string]$Drive,[switch]$Bg)
+param([switch]$Watch,[string]$Drive,[switch]$Bg)
 $ErrorActionPreference = 'SilentlyContinue'
 try{ [Console]::OutputEncoding = [Text.Encoding]::UTF8 }catch{}
-$VER = '1.19'
+$VER = '1.20'
 $ACC = 'Cyan'
 $ACC2 = 'Magenta'
 $W = 60
@@ -1449,7 +1449,9 @@ function Print-AdvStatus($installed,$wsh,$dx){
 }
 function PadW($s){ $pw=$W+4; if($s.Length -gt $pw){ return $s.Substring(0,$pw) }; return $s.PadRight($pw) }
 function Row($s,$fg='Gray',$bg=$null){ Write-Host $script:M -NoNewline; if($bg){ Write-Host (PadW $s) -ForegroundColor $fg -BackgroundColor $bg } else { Write-Host (PadW $s) -ForegroundColor $fg }; $script:bol=$true }
-function Fit-Rows { try{ $need=[Console]::CursorTop+2; $raw=$Host.UI.RawUI; if($need -gt $raw.WindowSize.Height -and $need -le $raw.MaxPhysicalWindowSize.Height){ Fit-Window $need; return $true } }catch{}; return $false }
+function Win-Rows { $h=0; try{ $h=$Host.UI.RawUI.WindowSize.Height }catch{}; if($h -lt 5){ $h=25 }; return $h }
+function Max-Rows { $h=0; try{ $h=$Host.UI.RawUI.MaxPhysicalWindowSize.Height }catch{}; if($h -lt 5){ $h=25 }; return $h }
+function Menu-Rows($items,$gap){ return ($items.Count*(1+$gap))+1 }
 function Open-Url($u){ try{ Start-Process $u }catch{} }
 function Show-Help($it){
     Clear-Host; Print-Banner
@@ -1548,7 +1550,8 @@ function Poll-Bg {
     if($script:upd -match '^apply (.+)'){ Apply-Update $matches[1] }
     return $true
 }
-function Render-Items($items,$idx,$top,$esc,$hasLeft=$false){
+function Render-Items($items,$idx,$top,$esc,$hasLeft=$false,$gap=1){
+    if($top -lt 0){ $top=0 }
     [Console]::SetCursorPosition(0,$top)
     for($i=0;$i -lt $items.Count;$i++){
         $it=$items[$i]
@@ -1559,7 +1562,7 @@ function Render-Items($items,$idx,$top,$esc,$hasLeft=$false){
         elseif($i -eq $idx){ Row ('  > '+$it.Text) 'Black' $ACC }
         elseif($it.Hot){ Row ('    '+$it.Text) 'Red' }
         else{ Row ('    '+$it.Text) 'Gray' }
-        Row ''
+        if($gap){ Row '' }
     }
     $hint=if($hasLeft){ (S 'hint.sub') } else { (SF 'hint.main' $esc) }
     Row $hint 'DarkGray'
@@ -1602,15 +1605,23 @@ function Menu-Loop($items,$escAction,$escText,$leftAction=$null){
     $top=[Console]::CursorTop
     $hasLeft=[bool]$leftAction
     try{ [Console]::CursorVisible=$false }catch{}
-    Render-Items $items $idx $top $escText $hasLeft
-    if(Fit-Rows){ return @{Action='redraw'} }
+    $gap=1
+    $need=$top+(Menu-Rows $items $gap)
+    if($need -gt (Win-Rows)){
+        $was=Win-Rows
+        Fit-Window ([Math]::Min($need,(Max-Rows)))
+        if((Win-Rows) -gt $was){ return @{Action='redraw'} }
+        if(($top+(Menu-Rows $items 0)) -le (Win-Rows)){ $gap=0 }
+    }
+    $rows=Menu-Rows $items $gap
+    $draw=$true
     while($true){
-        Render-Items $items $idx $top $escText $hasLeft
+        if($draw){ Render-Items $items $idx $top $escText $hasLeft $gap; $top=[Console]::CursorTop-$rows; $draw=$false }
         while(-not [Console]::KeyAvailable){ Start-Sleep -Milliseconds 120; if(Poll-Bg){ return @{Action='redraw'} } }
         $k=[Console]::ReadKey($true)
         switch($k.Key){
-            'UpArrow'   { do{ $idx=($idx-1+$items.Count)%$items.Count }while($items[$idx].Action -eq 'sep') }
-            'DownArrow' { do{ $idx=($idx+1)%$items.Count }while($items[$idx].Action -eq 'sep') }
+            'UpArrow'   { do{ $idx=($idx-1+$items.Count)%$items.Count }while($items[$idx].Action -eq 'sep'); $draw=$true }
+            'DownArrow' { do{ $idx=($idx+1)%$items.Count }while($items[$idx].Action -eq 'sep'); $draw=$true }
             'Enter'     { try{ [Console]::CursorVisible=$true }catch{}; return $items[$idx] }
             'Escape'    { try{ [Console]::CursorVisible=$true }catch{}; return @{Action=$escAction} }
             'RightArrow'{ return @{Action='help'; Item=$items[$idx]} }
@@ -1682,6 +1693,8 @@ function Choose-Lang {
             Row ''
         }
         Row '  1/2 or arrows, Enter   /   1/2 ya da oklar, Enter' 'DarkGray'
+        $top=[Console]::CursorTop-($codes.Count*2+1)
+        if($top -lt 0){ $top=0 }
         $k=[Console]::ReadKey($true)
         $ch="$($k.KeyChar)"
         if($ch -eq '1'){ $i=0 }
