@@ -1,6 +1,20 @@
 # Changelog
 
 
+## v1.22
+
+The background watcher keeps itself up to date.
+
+- **The watcher now checks for a new version too.** Until now only an interactive run looked
+  for updates; a machine that only ran the installed watcher stayed on its old version. When a
+  USB is plugged in, the watcher fires a silent, hidden update check at most once a day (a
+  date stamp under `%ProgramData%\Usb-Guard\lastupd.txt` gates it). It reuses the existing
+  verified path: the release's `USB-Guard.bat` is downloaded only if its SHA-256 matches the
+  hash published in the release notes, then swapped into place with the previous version kept
+  under `backup\`. No window, no prompt, no restart of the running watcher; the new code takes
+  over on the next plug-in or reboot. A new `-Selfupd` switch drives this and does nothing else.
+
+
 ## v1.21
 
 The drive's name comes back, and old decoys stay hidden.

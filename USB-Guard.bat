@@ -32,10 +32,10 @@ exit /b
 : --------------------------------------------------------------------------
 #>
 
-param([switch]$Watch,[string]$Drive,[switch]$Bg)
+param([switch]$Watch,[string]$Drive,[switch]$Bg,[switch]$Selfupd)
 $ErrorActionPreference = 'SilentlyContinue'
 try{ [Console]::OutputEncoding = [Text.Encoding]::UTF8 }catch{}
-$VER = '1.21'
+$VER = '1.22'
 $ACC = 'Cyan'
 $ACC2 = 'Magenta'
 $W = 60
@@ -1435,9 +1435,18 @@ function Start-Watcher {
     $global:GuardRes = $reserved
     $global:GuardLnk = $lnkRx
     $global:GuardMsg = (S 'wat.popup')
+    $global:GuardStamp = Join-Path $base 'lastupd.txt'
     Register-CimIndicationEvent -Query "SELECT * FROM Win32_VolumeChangeEvent WHERE EventType=2" -SourceIdentifier 'UsbGuardArrive' -Action {
         $dn=$Event.SourceEventArgs.NewEvent.DriveName; if(-not $dn){ return }
         Start-Sleep -Seconds 2
+        try{
+            $today=(Get-Date).ToString('yyyy-MM-dd'); $last=''
+            try{ $last=[IO.File]::ReadAllText($global:GuardStamp).Trim() }catch{}
+            if($last -ne $today -and $global:GuardBat){
+                [IO.File]::WriteAllText($global:GuardStamp,$today)
+                Start-Process powershell -WindowStyle Hidden -ArgumentList '-NoProfile','-WindowStyle','Hidden','-Command',("& ([scriptblock]::Create([IO.File]::ReadAllText('"+$global:GuardBat+"'))) -Selfupd")
+            }
+        }catch{}
         $root="$dn\"; $res=$global:GuardRes
         $lnk=$false
         try{ $sh=New-Object -ComObject WScript.Shell; foreach($l in @(Get-ChildItem -LiteralPath $root -Filter *.lnk -Force -EA SilentlyContinue)){ $s=$sh.CreateShortcut($l.FullName); if(("{0} {1}" -f $s.TargetPath,$s.Arguments) -match $global:GuardLnk){ $lnk=$true; break } } }catch{}
@@ -1802,6 +1811,20 @@ $script:savedLang = Get-Lang
 Set-Lang $(if($script:savedLang){ $script:savedLang } else { 'tr' })
 
 if($Watch){ Start-Watcher; return }
+if($Selfupd){
+    $u=Check-Update
+    if($u -match '^apply'){
+        $src=Get-BatSource
+        if($src){
+            $tmp="$src.new"
+            if(Test-Path -LiteralPath $tmp){
+                try{ $bk=Join-Path $base 'backup'; [IO.Directory]::CreateDirectory($bk) | Out-Null; Copy-Item -LiteralPath $src -Destination (Join-Path $bk ("USB-Guard-v{0}.bat" -f $VER)) -Force }catch{}
+                try{ [IO.File]::Copy($tmp,$src,$true); [IO.File]::Delete($tmp) }catch{}
+            }
+        }
+    }
+    return
+}
 if($Bg){
     $f=@(Find-PcRemnants)
     $d=Get-AvStatus
