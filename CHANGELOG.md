@@ -1,6 +1,35 @@
 # Changelog
 
 
+## v1.21
+
+The drive's name comes back, and old decoys stay hidden.
+
+- **Immunity's `autorun.inf` is a locked file now, not a folder.** v1.19 saved the drive's
+  name into the volume label, but Explorer still showed the generic "USB Drive (D:)": a root
+  `autorun.inf` makes the shell read the display name from that file, and because immunity had
+  turned it into a folder the shell could not read it and fell back to the type name. The
+  immunity `autorun.inf` is now a small locked file holding only `[autorun]`, so the shell
+  reads it, finds nothing to override the label with, and shows the real volume label again.
+  It still occupies the `autorun.inf` name and is locked read-only/system/hidden with a Deny
+  ACE on NTFS, so a worm cannot drop its own. A folder-shaped `autorun.inf` left by an older
+  version is migrated to the file on the next run.
+
+- **A hostile `autorun.inf` is still caught.** Infection detection no longer treats every
+  `autorun.inf` file as malware; it flags one only when it carries an `open=`, `shellexecute=`
+  or `shell\...` action. The immune file has none, so it is left alone; a real worm's file is
+  replaced by the locked one.
+
+- **Old label-named decoys no longer reappear.** When the volume label changed, the decoy
+  named after the previous label fell off the skip-list, so the "make files visible" step
+  unhid it and it showed up as an undeletable folder. That step now also skips any folder that
+  is already immunized — recognised by its reserved `con..` child — so stale decoys stay
+  hidden.
+
+- New test: `tools/tar.ps1` covers the file-based immunity, migration from a folder, the
+  malicious-`autorun.inf` case and decoy recognition.
+
+
 ## v1.20
 
 The menu stops flickering in a short window.
@@ -42,7 +71,7 @@ The drive keeps its name.
   on FAT/exFAT and 32 on NTFS. The value comes from a file an attacker controls, so it is
   never passed to a shell — the label is set through `SetVolumeLabelW`.
 
-- New test: `tools	label.ps1` covers the parsing, the sanitiser and the case where
+- New test: `tools/tlabel.ps1` covers the parsing, the sanitiser and the case where
   `autorun.inf` is already the locked folder.
 
 

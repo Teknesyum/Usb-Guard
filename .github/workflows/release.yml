@@ -63,6 +63,10 @@ jobs:
           $out
           if ($out -match 'FAIL') { throw 'tools/tlabel.ps1 reported a failure' }
 
+      - name: Immunity tests
+        shell: pwsh
+        run: ./tools/tar.ps1
+
       - name: Portable archive for winget
         shell: pwsh
         run: |

@@ -35,7 +35,7 @@ exit /b
 param([switch]$Watch,[string]$Drive,[switch]$Bg)
 $ErrorActionPreference = 'SilentlyContinue'
 try{ [Console]::OutputEncoding = [Text.Encoding]::UTF8 }catch{}
-$VER = '1.20'
+$VER = '1.21'
 $ACC = 'Cyan'
 $ACC2 = 'Magenta'
 $W = 60
@@ -659,7 +659,16 @@ public class Win32c{
 
 function Unlock-Path($p){ if(Test-Path -LiteralPath $p){ attrib -s -h -r "$p" /s /d 2>$null | Out-Null; takeown /f "$p" /r /d y 2>$null | Out-Null; icacls "$p" /reset /t /c /q 2>$null | Out-Null } }
 function Nuke-Path($p){ if(-not (Test-Path -LiteralPath $p)){ return }; Unlock-Path $p; $lp='\\?\'+$p; try{ [IO.Directory]::Delete($lp,$true) }catch{ Remove-Item -LiteralPath $p -Recurse -Force 2>$null } }
-function Test-Immunized($p){ (Test-Path -LiteralPath $p) -and (Test-Path -LiteralPath ('\\?\'+$p+'\'+$reserved)) }
+function Test-ArSafe($p){
+    $it=Get-Item -LiteralPath $p -Force -EA SilentlyContinue
+    if(-not $it -or $it.PSIsContainer){ return $false }
+    $t=''; try{ $t=[IO.File]::ReadAllText($p) }catch{ return $false }
+    return -not ($t -match '(?im)^[ \t]*(open|shellexecute)[ \t]*=' -or $t -match '(?im)shell\\')
+}
+function Test-Immunized($p){
+    if((Split-Path $p -Leaf) -ieq 'autorun.inf'){ return (Test-ArSafe $p) }
+    (Test-Path -LiteralPath $p) -and (Test-Path -LiteralPath ('\\?\'+$p+'\'+$reserved))
+}
 function Immunity-State($root,$label){
     $t=@($fixed); if($label){ $t+=$label }
     $n=0; foreach($x in $t){ if(Test-Immunized (Join-Path $root $x)){ $n++ } }
@@ -667,7 +676,18 @@ function Immunity-State($root,$label){
     if($n -eq $t.Count){ return 'full' }
     return 'part'
 }
+function Lock-Autorun($p,$ntfs){
+    if(Test-Path -LiteralPath $p){
+        Unlock-Path $p
+        try{ if((Get-Item -LiteralPath $p -Force).PSIsContainer){ [IO.Directory]::Delete(('\\?\'+$p),$true) } else { [IO.File]::Delete('\\?\'+$p) } }
+        catch{ Remove-Item -LiteralPath $p -Recurse -Force 2>$null }
+    }
+    [IO.File]::WriteAllText($p, "[autorun]`r`n", (New-Object Text.UTF8Encoding($false)))
+    attrib +s +h +r "$p" 2>$null | Out-Null
+    if($ntfs){ icacls "$p" /deny "*S-1-1-0:(WD,AD,DC,DE)" /q 2>$null | Out-Null }
+}
 function Lock-Immunity($p,$ntfs){
+    if((Split-Path $p -Leaf) -ieq 'autorun.inf'){ Lock-Autorun $p $ntfs; return }
     if(Test-Path -LiteralPath $p){
         $it=Get-Item -LiteralPath $p -Force
         if($it -and -not $it.PSIsContainer){ attrib -s -h -r "$p" 2>$null | Out-Null; Remove-Item -LiteralPath $p -Force 2>$null }
@@ -901,8 +921,9 @@ function Inspect-Drive($root,$label){
     }
     $sysP=Join-Path $root 'sysvolume'
     $r.HasSys=(Test-Path -LiteralPath $sysP) -and -not (Test-Immunized $sysP)
-    $ar=Get-Item -LiteralPath (Join-Path $root 'autorun.inf') -Force -EA SilentlyContinue
-    $r.ArFile=[bool]($ar -and -not $ar.PSIsContainer)
+    $arP=Join-Path $root 'autorun.inf'
+    $ar=Get-Item -LiteralPath $arP -Force -EA SilentlyContinue
+    $r.ArFile=[bool]($ar -and -not $ar.PSIsContainer -and -not (Test-ArSafe $arP))
     $recP=Join-Path $root 'recycler'
     $r.RecBad=(Test-Path -LiteralPath $recP) -and -not (Test-Immunized $recP)
     $r.Infected=($r.BadLnk.Count -gt 0) -or $r.HasSys -or $r.ArFile -or $r.RecBad -or ($r.Mimic.Count -gt 0) -or ($r.Payload.Count -gt 0) -or ($r.SysHide.Count -gt 0)
@@ -971,7 +992,7 @@ function Process-Drive($dsk){
         Spin (S 'dr.ssys') { $s=Join-Path $root 'sysvolume'; if(-not (Test-Immunized $s)){ Restore-Hidden $s $root $q } } | Out-Null
     }
     T (S 'dr.hvisible') $ACC2
-    Spin (S 'dr.sshow') { $skip=@($keepDirs)+@($batName,$label)+$fixed; Get-ChildItem -LiteralPath $root -Force | Where-Object { $skip -notcontains $_.Name } | ForEach-Object { attrib -s -h "$($_.FullName)" 2>$null | Out-Null } } | Out-Null
+    Spin (S 'dr.sshow') { $skip=@($keepDirs)+@($batName,$label)+$fixed; Get-ChildItem -LiteralPath $root -Force | Where-Object { ($skip -notcontains $_.Name) -and -not (Test-Immunized $_.FullName) } | ForEach-Object { attrib -s -h "$($_.FullName)" 2>$null | Out-Null } } | Out-Null
 
     T (S 'dr.himmune') $ACC2
     foreach($n in $targets){ $was=Test-Immunized (Join-Path $root $n); Spin (SF 'dr.slock' $n) { Lock-Immunity (Join-Path $root $n) $ntfs } ($(if($was){(S 'sp.already')}else{(S 'sp.ok')})) $(if($was){'DarkGray'}else{'Green'}) | Out-Null }

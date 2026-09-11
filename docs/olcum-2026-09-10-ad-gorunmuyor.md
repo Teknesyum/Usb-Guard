@@ -61,3 +61,34 @@ görünmezse 2 doğrudur.
 Ölçüm sırasında USB çıkarıldı. `D:\autorun.inf` klasörü **`D:\zz-autorun-test` adında
 duruyor** ve o ada karşı bağışıklık şu an yok. Sürücü tekrar takılınca ya USB-Guard'ın
 "Düzelt" adımı bağışıklığı yeniden kurar ya da klasör eski adına döndürülür.
+
+## Sonuç — 11 Eylül 2026
+
+Sebep **2 numaralı hipotez**: kökteki `autorun.inf` **klasörü**. Kabuk kök `autorun.inf`'i
+INI olarak açıp adı ondan okumaya çalışıyor; klasör olduğu için okuyamıyor ve birim
+etiketini yok sayıp genel "USB Sürücüsü" adına düşüyor. v1.19 etiketi birim metadata'sına
+yazdı ama klasörün etiketi bastırdığını görmedi, o yüzden ad hâlâ görünmedi.
+
+Kesin deney (aynı oturumda, taze süreç):
+
+    autorun.inf klasoru VAR  + mount  -> "USB Sürücüsü (D:)"
+    autorun.inf klasoru YOK  + mount  -> "Mustafa Ozel (D:)"
+
+Tek değişken `autorun.inf` klasörünün varlığı. Yokken birim etiketi görünüyor.
+
+Düzeltme (v1.21): bağışıklık `autorun.inf`'i klasör değil, içinde yalnız `[autorun]` olan
+**kilitli DOSYA** yapıyor. Kabuk dosyayı okuyabiliyor, üzerine yazacak `label=` bulamıyor
+ve gerçek birim etiketini gösteriyor. Dosya yine `+s +h +r` ve NTFS'te Deny ACE ile kilitli,
+kötücül autorun engellenmeye devam ediyor. Kötücül `autorun.inf` yalnızca `open=` /
+`shellexecute=` / `shell\` içerdiğinde enfeksiyon sayılıyor.
+
+Etiketin `Özel → Ozel` (ASCII) hâline gelmesinin kaynağı bulunamadı; koddaki yol
+(`Clean-VolLabel` + `SetVolumeLabelW`, CharSet.Unicode) Ö'yü korur, kodda üretilmiyor.
+Canlı USB'de etiket elle `Mustafa Özel` olarak geri yazıldı.
+
+Canlı USB'de yapılanlar: etiket `Mustafa Özel`, `autorun.inf` kilitli dosyaya çevrildi,
+görünür kalan eski `Mustafa Özel` decoy'u ve `zz-autorun-test` temizlendi/gizlendi, `ventoy`
+klasörü gizlendi, `VentoyPlugson.log` silindi. Bir kaza: `Mustafa Özel` gibi Türkçe yollu
+`icacls`/`attrib` çağrısı `-File` betiğinde kod sayfası yüzünden bozulup kök `D:\`'ye Deny
+ACE düşürdü; fark edilip geri alındı (kök `Everyone:(M)`). Ders: canlı diskte native araca
+Türkçe yol verme, .NET kullan.

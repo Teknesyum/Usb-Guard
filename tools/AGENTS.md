@@ -11,6 +11,7 @@ fonksiyonları doğrudan çağırır. Yollar `$PSScriptRoot`'a göre çözülür
 - `tlines.ps1` — `subst X:` ile bitiş ekranı, satır sayısı
 - `twrap.ps1` — cetvelli çıktı, satır genişliği
 - `tlabel.ps1` — `autorun.inf` etiket ayrıştırma ve ad temizleme
+- `tar.ps1` — dosya-tabanlı `autorun.inf` bağışıklığı, klasör→dosya göçü, kötücül ayrımı
 
 Çalıştırma: `powershell -NoProfile -ExecutionPolicy Bypass -File tools\t117.ps1`
 
