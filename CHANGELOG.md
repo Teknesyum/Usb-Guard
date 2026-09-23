@@ -1,6 +1,12 @@
 # Changelog
 
 
+## v1.25
+
+- Opens in its own console window at its own size instead of the terminal's wide default.
+- The footer after exit sits lower.
+- The installer message matches the new infected-USB popup.
+
 ## v1.24
 
 An infected USB now explains itself, and the fix shows its work.

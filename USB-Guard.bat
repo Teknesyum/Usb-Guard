@@ -35,7 +35,7 @@ exit /b
 param([switch]$Watch,[string]$Drive,[switch]$Bg,[switch]$Selfupd,[switch]$Auto)
 $ErrorActionPreference = 'SilentlyContinue'
 try{ [Console]::OutputEncoding = [Text.Encoding]::UTF8 }catch{}
-$VER = '1.24'
+$VER = '1.25'
 $ACC = 'Cyan'
 $ACC2 = 'Magenta'
 $W = 60
@@ -211,7 +211,7 @@ $STRTR = @{
  'wat.sdel'     = "Görevi Sil"
  'wat.sstop'    = "İzleyiciyi Durdur"
  'wat.done'     = "  Kuruldu. Bu bilgisayardaki her hesapta çalışır; virüslü USB"
- 'wat.done2'    = "  takılınca ""Temizleyeyim mi?"" diye sorar."
+ 'wat.done2'    = "  takılınca ne olduğunu anlatır ve düzeltmeyi önerir."
  'wat.failed'   = "  Görev kurulamadı. Yönetici olarak çalıştırdığından emin ol."
  'wat.removed'  = "  Kaldırıldı. (Aşılanmış USB'ler Kilitli Kalır.)"
  'wat.popup'    = "USB'nizdeki dosyalar neden görünmüyor?`n`n{0} sürücüsünde kısayol solucanı bulundu. Bu virüs çoğunlukla çok sayıda USB takılan bir bilgisayardan bulaşır: kırtasiye, okul, iş yeri. Klasörlerinizi gizleyip yerlerine aynı adda kısayollar koyar; kısayola tıklanınca virüs bilgisayara da geçer.`n`nDosyalarınız silinmedi, yalnızca gizlendi.`n`nUSB'yi düzeltip Usb-Guard'ı kurayım mı?"
@@ -453,7 +453,7 @@ $STREN = @{
  'wat.sdel'     = "Delete The Task"
  'wat.sstop'    = "Stop The Watcher"
  'wat.done'     = "  Installed. It runs for every account on this PC and asks"
- 'wat.done2'    = "  ""Clean it?"" when an infected USB is plugged in."
+ 'wat.done2'    = "  explains what happened and offers to fix it."
  'wat.failed'   = "  The task could not be created. Make sure you are running as admin."
  'wat.removed'  = "  Removed. (Guarded USB Drives Stay Locked.)"
  'wat.popup'    = "Why can't you see the files on your USB?`n`nA shortcut worm was found on {0}. It usually comes from a computer that many USB sticks are plugged into: a print shop, a school, an office. It hides your folders and puts shortcuts with the same names in their place; clicking one spreads the worm to the computer too.`n`nYour files were not deleted, only hidden.`n`nFix the USB and install Usb-Guard?"
@@ -656,7 +656,7 @@ function Print-Banner {
     NL
 }
 function Show-Footer {
-    NL
+    NL; NL; NL
     TN '  Teknesyum' $ACC; T ("   |   Usb-Guard v{0}" -f $VER) 'DarkGray'
     TN '  GitHub  : ' 'DarkGray'; Link 'https://github.com/Teknesyum' 'github.com/Teknesyum' 'White'; NL
     TN '  Sponsor : ' 'DarkGray'; Link 'https://github.com/sponsors/Teknesyum' 'github.com/sponsors/Teknesyum' $ACC2; NL
@@ -1917,6 +1917,29 @@ if($Bg){
     return
 }
 
+function In-Terminal {
+    try{
+        if(-not ('Win32w' -as [type])){
+            Add-Type -TypeDefinition @'
+using System;using System.Text;using System.Runtime.InteropServices;
+public class Win32w{
+ [DllImport("kernel32.dll")] public static extern IntPtr GetConsoleWindow();
+ [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern int GetClassName(IntPtr h, StringBuilder b, int n);
+}
+'@
+        }
+        $sb=New-Object Text.StringBuilder 64
+        [void][Win32w]::GetClassName([Win32w]::GetConsoleWindow(),$sb,64)
+        return ($sb.ToString() -eq 'PseudoConsoleWindow')
+    }catch{ return $false }
+}
+if(-not $env:UG_CONHOST -and $env:SELFBAT -and (In-Terminal)){
+    $env:UG_CONHOST='1'
+    $a=[char]34+$env:SELFBAT+[char]34
+    if($Drive){ $a+=' -Drive '+$Drive }
+    if($Auto){ $a+=' -Auto' }
+    try{ Start-Process conhost.exe -ArgumentList $a; return }catch{}
+}
 Migrate-Base
 Fit-Window
 if(-not $script:savedLang -and -not $Drive){ Choose-Lang }
