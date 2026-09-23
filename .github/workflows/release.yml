@@ -74,6 +74,13 @@ jobs:
           $out
           if ($out -match 'FAIL') { throw 'tools/tmenu.ps1 reported a failure' }
 
+      - name: Auto-fix tests
+        shell: pwsh
+        run: |
+          $out = ./tools/tauto.ps1 | Out-String
+          $out
+          if ($out -match 'FAIL') { throw 'tools/tauto.ps1 reported a failure' }
+
       - name: Portable archive for winget
         shell: pwsh
         run: |

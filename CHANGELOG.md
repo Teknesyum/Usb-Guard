@@ -1,6 +1,24 @@
 # Changelog
 
 
+## v1.24
+
+An infected USB now explains itself, and the fix shows its work.
+
+- **The pop-up tells you what happened before it asks anything.** When the watcher finds a
+  shortcut worm on a stick it now says why the files are missing, where the worm usually
+  comes from, and that the files were hidden rather than deleted. It then makes one offer:
+  fix the USB and install Usb-Guard.
+
+- **Yes does the whole job without another question.** The USB is cleaned, its folders are
+  brought back, it is immunised, Usb-Guard is copied onto it and the background watcher is
+  installed on the computer.
+
+- **Every step shows a percentage**, and the run ends with a summary of what was done:
+  fake shortcuts removed, worm files quarantined, folders restored, immunity locks placed,
+  and whether the computer and the stick now carry Usb-Guard.
+
+
 ## v1.23
 
 One entry that does the whole setup.

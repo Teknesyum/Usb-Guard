@@ -32,10 +32,10 @@ exit /b
 : --------------------------------------------------------------------------
 #>
 
-param([switch]$Watch,[string]$Drive,[switch]$Bg,[switch]$Selfupd)
+param([switch]$Watch,[string]$Drive,[switch]$Bg,[switch]$Selfupd,[switch]$Auto)
 $ErrorActionPreference = 'SilentlyContinue'
 try{ [Console]::OutputEncoding = [Text.Encoding]::UTF8 }catch{}
-$VER = '1.23'
+$VER = '1.24'
 $ACC = 'Cyan'
 $ACC2 = 'Magenta'
 $W = 60
@@ -214,7 +214,21 @@ $STRTR = @{
  'wat.done2'    = "  takılınca ""Temizleyeyim mi?"" diye sorar."
  'wat.failed'   = "  Görev kurulamadı. Yönetici olarak çalıştırdığından emin ol."
  'wat.removed'  = "  Kaldırıldı. (Aşılanmış USB'ler Kilitli Kalır.)"
- 'wat.popup'    = "Virüslü USB algılandı: {0}`n`nTemizleyip aşılayayım mı?"
+ 'wat.popup'    = "USB'nizdeki dosyalar neden görünmüyor?`n`n{0} sürücüsünde kısayol solucanı bulundu. Bu virüs çoğunlukla çok sayıda USB takılan bir bilgisayardan bulaşır: kırtasiye, okul, iş yeri. Klasörlerinizi gizleyip yerlerine aynı adda kısayollar koyar; kısayola tıklanınca virüs bilgisayara da geçer.`n`nDosyalarınız silinmedi, yalnızca gizlendi.`n`nUSB'yi düzeltip Usb-Guard'ı kurayım mı?"
+ 'au.head'      = "  [ USB'nizdeki Dosyalar Neden Görünmüyor? ]"
+ 'au.why'       = "{0} sürücüsünde kısayol solucanı bulundu. Bu virüs çoğunlukla çok sayıda USB takılan bir bilgisayardan bulaşır: kırtasiye, okul, iş yeri. Klasörlerinizi gizleyip yerlerine aynı adda kısayollar koyar. Dosyalarınız silinmedi, yalnızca gizlendi."
+ 'au.work'      = "  [ Düzeltiliyor ve Usb-Guard Kuruluyor ]"
+ 'au.done'      = "  [ Yapılanlar ]"
+ 'au.lnk'       = "  Silinen sahte kısayol       : {0}"
+ 'au.quar'      = "  Karantinaya alınan virüs    : {0}"
+ 'au.back'      = "  Geri getirilen klasör/dosya : {0}"
+ 'au.imm'       = "  Aşılanan kilit              : {0}"
+ 'au.pc'        = "  Bu bilgisayar               : Usb-Guard kuruldu, izleniyor"
+ 'au.pcfail'    = "  Bu bilgisayar               : izleyici kurulamadı"
+ 'au.usb'       = "  USB                         : Usb-Guard kopyalandı"
+ 'au.usbfail'   = "  USB                         : kopyalanamadı"
+ 'au.end'       = "  USB'niz temiz ve korumalı. Dosyalarınız yerinde."
+ 'au.pct'       = "Tamamlandı"
 
  'st.ver'       = "Sürüm"
  'st.pc'        = "Bu PC"
@@ -442,7 +456,21 @@ $STREN = @{
  'wat.done2'    = "  ""Clean it?"" when an infected USB is plugged in."
  'wat.failed'   = "  The task could not be created. Make sure you are running as admin."
  'wat.removed'  = "  Removed. (Guarded USB Drives Stay Locked.)"
- 'wat.popup'    = "Infected USB detected: {0}`n`nClean and guard it?"
+ 'wat.popup'    = "Why can't you see the files on your USB?`n`nA shortcut worm was found on {0}. It usually comes from a computer that many USB sticks are plugged into: a print shop, a school, an office. It hides your folders and puts shortcuts with the same names in their place; clicking one spreads the worm to the computer too.`n`nYour files were not deleted, only hidden.`n`nFix the USB and install Usb-Guard?"
+ 'au.head'      = "  [ Why Can't You See The Files On Your USB? ]"
+ 'au.why'       = "A shortcut worm was found on {0}. It usually comes from a computer that many USB sticks are plugged into: a print shop, a school, an office. It hides your folders and puts shortcuts with the same names in their place. Your files were not deleted, only hidden."
+ 'au.work'      = "  [ Fixing The USB And Installing Usb-Guard ]"
+ 'au.done'      = "  [ What Was Done ]"
+ 'au.lnk'       = "  Fake shortcuts removed      : {0}"
+ 'au.quar'      = "  Worm files quarantined      : {0}"
+ 'au.back'      = "  Folders and files restored  : {0}"
+ 'au.imm'       = "  Immunity locks placed       : {0}"
+ 'au.pc'        = "  This computer               : Usb-Guard installed, watching"
+ 'au.pcfail'    = "  This computer               : the watcher could not be installed"
+ 'au.usb'       = "  USB                         : Usb-Guard copied"
+ 'au.usbfail'   = "  USB                         : could not be copied"
+ 'au.end'       = "  Your USB is clean and protected. Your files are in place."
+ 'au.pct'       = "Complete"
 
  'st.ver'       = "Version"
  'st.pc'        = "This PC"
@@ -575,7 +603,13 @@ function Ask-YN {
 }
 function Spin($spText,$spBlock,$okText=$null,$okColor='Green'){
     if($null -eq $okText){ $okText=(S 'sp.ok') }
-    TN ("  {0,-50}" -f $spText) 'Gray'
+    if($script:pgTotal -gt 0){
+        $script:pgDone++
+        $pc=[Math]::Min(99,[int][Math]::Round(100*$script:pgDone/$script:pgTotal))
+        TN ("  %{0,-3} " -f $pc) $ACC
+        TN ("{0,-45}" -f $spText) 'Gray'
+    }
+    else{ TN ("  {0,-50}" -f $spText) 'Gray' }
     $spOut = & $spBlock
     Write-Host '[' -NoNewline -ForegroundColor DarkGray
     Write-Host $okText -NoNewline -ForegroundColor $okColor
@@ -774,6 +808,7 @@ function Fix-VolLabel($letter,$root,$fs,$arLbl){
             return
         }
     }
+    if($script:autoRun){ T (S 'lb.skip') 'DarkGray'; return }
     TN (S 'lb.ask') 'Yellow'
     if(-not (Ask-YN)){ T (S 'lb.skip') 'DarkGray'; return }
     TN (SF 'lb.prompt' $max) 'Yellow'
@@ -965,6 +1000,8 @@ function Process-Drive($dsk){
     $ins=Inspect-Drive $root $label
     $infected=$ins.Infected
     $arLbl=Read-ArLabel $root
+    $script:rep=@{Lnk=$ins.BadLnk.Count; Quar=($ins.Payload.Count+$ins.Mimic.Count+$ins.SysHide.Count); Back=($ins.Hidden.Count+$ins.Unhide.Count); Imm=$targets.Count}
+    if($script:autoRun){ $script:pgTotal=$(if($infected){ 6 } else { 0 })+$(if($ins.Unhide.Count -gt 0){ 1 } else { 0 })+1+$targets.Count+$(if(-not $label -and $arLbl){ 1 } else { 0 })+1+3 }
 
     Write-Host ''; Bar
     LB 'dr.target' $script:wDrv 'DarkGray'; T $root 'White'
@@ -1010,8 +1047,35 @@ function Process-Drive($dsk){
     if(-not $ntfs){ Write-Host ''; T (SF 'dr.noacl' $fs) 'DarkYellow' }
     Write-Host ''; T (SF 'dr.done' $root) 'Green'
     if($q){ T (SF 'dr.quar' $q) 'Gray' }
+    if($script:autoRun){ return }
     if($infected){ Wrap-T (S 'dr.tip') 'Yellow' }
     Offer-Copy $root
+}
+function Auto-Fix($dsk){
+    $letter=$dsk.DeviceID.TrimEnd(':')
+    $root="$letter`:\"
+    $script:autoRun=$true; $script:pgDone=0; $script:pgTotal=0
+    T (S 'au.head') $ACC2; NL
+    Wrap-T (SF 'au.why' "$letter`:") 'Gray'
+    NL; T (S 'au.work') $ACC2
+    $hid=@(Get-ChildItem -LiteralPath $root -Force -EA SilentlyContinue | Where-Object { $_.Attributes -band [IO.FileAttributes]::Hidden } | ForEach-Object { $_.Name })
+    Process-Drive $dsk
+    $script:rep.Back=@($hid | Where-Object { $it=Get-Item -LiteralPath (Join-Path $root $_) -Force -EA SilentlyContinue; $it -and -not ($it.Attributes -band [IO.FileAttributes]::Hidden) }).Count
+    $usbOk=$false
+    $src=Get-BatSource
+    if($src){ Spin (SF 'cp.scopyto' "$letter`:") { try{ Copy-Item -LiteralPath $src -Destination (Join-Path $root $batName) -Force -EA Stop }catch{} } | Out-Null; $usbOk=Test-Path -LiteralPath (Join-Path $root $batName) }
+    Install-Watcher
+    Write-Host ''; TN ("  %100 ") $ACC; T (S 'au.pct') 'Green'
+    $script:pgTotal=0
+    NL; T (S 'au.done') $ACC2
+    T (SF 'au.lnk' $script:rep.Lnk) 'Gray'
+    T (SF 'au.quar' $script:rep.Quar) 'Gray'
+    T (SF 'au.back' $script:rep.Back) 'Gray'
+    T (SF 'au.imm' $script:rep.Imm) 'Gray'
+    if($script:taskOk){ T (S 'au.pc') 'Green' } else { T (S 'au.pcfail') 'Red' }
+    if($usbOk){ T (S 'au.usb') 'Green' } else { T (S 'au.usbfail') 'DarkYellow' }
+    NL; T (S 'au.end') 'Green'
+    $script:autoRun=$false
 }
 function Offer-Copy($root){
     $src=Get-BatSource
@@ -1469,7 +1533,7 @@ function Start-Watcher {
         if($lnk -or $sysBad -or $arBad -or $recBad){
             Add-Type -AssemblyName System.Windows.Forms
             $r=[System.Windows.Forms.MessageBox]::Show(($global:GuardMsg -f $dn),'Usb-Guard','YesNo','Warning')
-            if($r -eq 'Yes'){ Start-Process -FilePath $global:GuardBat -Verb RunAs -ArgumentList ('-Drive '+$dn.TrimEnd(':')) }
+            if($r -eq 'Yes'){ Start-Process -FilePath $global:GuardBat -Verb RunAs -ArgumentList ('-Drive '+$dn.TrimEnd(':')+' -Auto') }
         }
     } | Out-Null
     while($true){ Start-Sleep -Seconds 3600 }
@@ -1862,7 +1926,7 @@ if($Drive){
     if("$letter`:" -eq $env:SystemDrive){ T (S 'dr.sysdrive') 'Red'; Pause-Key; return }
     $dsk=Get-CimInstance Win32_LogicalDisk -Filter "DeviceID='$letter`:'"
     if(-not $dsk){ T (SF 'dr.notfound' "$letter`:") 'Red'; Pause-Key; return }
-    Process-Drive $dsk
+    if($Auto){ Auto-Fix $dsk } else { Process-Drive $dsk }
     Show-Footer; Pause-Key; return
 }
 

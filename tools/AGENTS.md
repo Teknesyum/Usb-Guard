@@ -12,6 +12,7 @@ fonksiyonları doğrudan çağırır. Yollar `$PSScriptRoot`'a göre çözülür
 - `twrap.ps1` — cetvelli çıktı, satır genişliği
 - `tlabel.ps1` — `autorun.inf` etiket ayrıştırma ve ad temizleme
 - `tmenu.ps1` — ana menü sırası ve "Her Yere Kur ve Tara" seçeneği
+- `tauto.ps1` — `subst` ile virüslü sahte USB; otomatik düzeltme, yüzde ve özet
 - `tar.ps1` — dosya-tabanlı `autorun.inf` bağışıklığı, klasör→dosya göçü, kötücül ayrımı
 
 Çalıştırma: `powershell -NoProfile -ExecutionPolicy Bypass -File tools\t117.ps1`
