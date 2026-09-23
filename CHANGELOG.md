@@ -1,6 +1,10 @@
 # Changelog
 
 
+## v1.27
+
+- The scan progress flows in 0.1% steps on one live line that names the item being checked, redrawn at most every 40 ms; when an area finishes, only its summary line stays.
+
 ## v1.26
 
 - The PC scan shows its work: nine areas, one line each, with a percentage, the number of items checked and the result, then a total line.

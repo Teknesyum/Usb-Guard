@@ -1,7 +1,7 @@
 param([switch]$Watch,[string]$Drive,[switch]$Bg,[switch]$Selfupd,[switch]$Auto)
 $ErrorActionPreference = 'SilentlyContinue'
 try{ [Console]::OutputEncoding = [Text.Encoding]::UTF8 }catch{}
-$VER = '1.26'
+$VER = '1.27'
 $ACC = 'Cyan'
 $ACC2 = 'Magenta'
 $W = 60
@@ -1096,8 +1096,9 @@ function Copy-ToUsb($drives){
 
 function Add-Find($list,$h){ $h.Desc="$($h.Desc)"; [void]$list.Add($h) }
 function Find-Procs($f){
-    foreach($p in Get-CimInstance Win32_Process){
-        $script:chk++
+    $pl=@(Get-CimInstance Win32_Process); Set-StepTotal $pl.Count
+    foreach($p in $pl){
+        $script:chk++; Tick $p.Name
         $n="$($p.Name)"; $cl="$($p.CommandLine)"; $ep="$($p.ExecutablePath)"
         if($cl -match '(?i)usb-guard'){ continue }
         $bad=($n -match '(?i)^(xmrig|svctrl64|svcinsty64)\.exe$') -or ($ep -match '(?i)\\Windows \\|\\wsvcz\\') -or ($n -match '(?i)^(wscript|cscript|mshta)\.exe$' -and $cl -match $susRx)
@@ -1110,7 +1111,7 @@ function Find-RunKeys($f){
         $p=Get-ItemProperty -Path $k -EA SilentlyContinue; if(-not $p){ continue }
         foreach($pr in $p.PSObject.Properties){
             if($pr.Name -match '^PS(Path|ParentPath|ChildName|Drive|Provider)$'){ continue }
-            $script:chk++
+            $script:chk++; Tick $pr.Name
             $v="$($pr.Value)"; if($v -match '(?i)usb-guard'){ continue }
             if($v -notmatch $susRx){ continue }
             if($v -match '(?i)\\(Temp|Public)\\[^"]*\.exe' -and -not ($v -match $knownNames) -and (Test-Trusted $v)){
@@ -1149,7 +1150,7 @@ function Find-Startup($f){
     $dirs=@((Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs\Startup'),(Join-Path $env:ProgramData 'Microsoft\Windows\Start Menu\Programs\StartUp'))
     foreach($st in $dirs){
         Get-ChildItem -LiteralPath $st -Force -File -EA SilentlyContinue | ForEach-Object {
-            $bad=$false; $script:chk++
+            $bad=$false; $script:chk++; Tick $_.Name
             if($_.Name -match $scriptExt){ $bad=$true }
             elseif($_.Extension -match '(?i)^\.lnk$'){ $bad=((Lnk-Info $_.FullName) -match $susRx) }
             elseif($_.Extension -match '(?i)^\.exe$'){ $bad=($_.Name -match '(?i)^(xmrig|svctrl64|svcinsty64)') }
@@ -1160,7 +1161,9 @@ function Find-Startup($f){
 function Find-Tasks($f){
     $tasks=Get-ScheduledTask -EA SilentlyContinue | Where-Object { $_.TaskPath -notlike '\Microsoft\*' }
     $script:chk+=@(Get-ScheduledTask -EA SilentlyContinue).Count
+    $tasks=@($tasks); Set-StepTotal $tasks.Count
     foreach($t in $tasks){
+        Tick $t.TaskName
         foreach($a in @($t.Actions)){
             $cmd=("{0} {1}" -f $a.Execute,$a.Arguments)
             if($cmd -match '(?i)usb-guard'){ continue }
@@ -1208,8 +1211,9 @@ function Find-Sideload($s){
 function Find-Services($f){
     $svcRx='(?i)\\Temp\\|\\Windows \\|\\u\d{6}\.(dll|dat)|wsvcz|svctrl64|svcinsty64|xmrig|\.(vbs|js|bat|cmd)\b'
     $dllRx='(?i)\\Temp\\|\\AppData\\|\\ProgramData\\|\\Users\\|\\Windows \\|\\u\d{6}\.(dll|dat)|wsvcz'
-    foreach($s in Get-ChildItem 'HKLM:\SYSTEM\CurrentControlSet\Services' -EA SilentlyContinue){
-        $script:chk++
+    $svcs=@(Get-ChildItem 'HKLM:\SYSTEM\CurrentControlSet\Services' -EA SilentlyContinue); Set-StepTotal $svcs.Count
+    foreach($s in $svcs){
+        $script:chk++; Tick $s.PSChildName
         $ip="$((Get-ItemProperty -Path $s.PSPath -EA SilentlyContinue).ImagePath)"
         $dll="$((Get-ItemProperty -Path (Join-Path $s.PSPath 'Parameters') -EA SilentlyContinue).ServiceDll)"
         $hit=$false
@@ -1222,7 +1226,7 @@ function Find-Services($f){
 }
 function Find-MinerFiles($f){
     $script:chk+=6
-    foreach($n in 'svcinsty64.exe','svctrl64.exe','svctrl64.dll'){ $p=Join-Path $sysDir $n; if(Test-Path -LiteralPath $p){ Add-Find $f @{Type='File';Path=$p;Desc=("System32: {0}" -f $n);Detail=$p} } }
+    foreach($n in 'svcinsty64.exe','svctrl64.exe','svctrl64.dll'){ Tick $n; $p=Join-Path $sysDir $n; if(Test-Path -LiteralPath $p){ Add-Find $f @{Type='File';Path=$p;Desc=("System32: {0}" -f $n);Detail=$p} } }
     $wz=Join-Path $sysDir 'wsvcz'; if(Test-Path -LiteralPath $wz){ Add-Find $f @{Type='File';Path=$wz;Desc=(S 'fnd.wsvcz');Detail=$wz} }
     if(Test-Path -LiteralPath $spaceDir){ Add-Find $f @{Type='File';Path=$spaceDir;Desc=(S 'fnd.fakedir');Detail=$spaceDir} }
     Get-ChildItem -LiteralPath $sysDir -Filter 'u*.dll' -Force -EA SilentlyContinue | Where-Object { $_.Name -match '^u\d{6}\.dll$' } | ForEach-Object { Add-Find $f @{Type='File';Path=$_.FullName;Desc=("System32: {0}" -f $_.Name);Detail=$_.FullName} }
@@ -1242,13 +1246,15 @@ function Find-Scripts($f){
         $n=0
         try{ foreach($sd in [IO.Directory]::EnumerateDirectories($d)){
             if((Split-Path $sd -Leaf) -match $skipDir){ continue }
-            [void]$dirs.Add($sd); $n++
+            [void]$dirs.Add($sd); $n++; Tick $sd
             try{ foreach($sd2 in [IO.Directory]::EnumerateDirectories($sd)){ if((Split-Path $sd2 -Leaf) -notmatch $skipDir){ [void]$dirs.Add($sd2); $n++ }; if($n -ge 1500){ break } } }catch{}
             if($n -ge 1500){ break }
         } }catch{}
     }
     $ud=@($dirs | Select-Object -Unique); $script:chk+=$ud.Count
+    Set-StepTotal $ud.Count
     foreach($d in $ud){
+        Tick $d
         $files=@(); try{ $files=@([IO.Directory]::EnumerateFiles($d) | Where-Object { $_ -match $extRx }) }catch{}
         foreach($fp in $files){
             try{ $fi=New-Object IO.FileInfo $fp; if($fi.Length -gt 500KB -or $fi.Length -lt 64){ continue } }catch{ continue }
@@ -1264,7 +1270,7 @@ function Find-Exclusions($f){
         foreach($sub in @('Paths','Extensions','Processes')){
             $it=Get-Item -Path (Join-Path $b $sub) -EA SilentlyContinue; if(-not $it){ continue }
             foreach($p in $it.Property){
-                $script:chk++
+                $script:chk++; Tick $p
                 if($sub -eq 'Paths' -and $p -notmatch $rx){ continue }
                 if($seen -contains $p){ continue }
                 $seen+=$p
@@ -1286,7 +1292,7 @@ function Find-Sabotage($f){
         @{K='HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System';N='DisableRegistryTools';L='fnd.regeditm'}
     )
     $script:chk+=$checks.Count+1
-    foreach($c in $checks){ $k=$c['K']; $n=$c['N']; $it=Get-ItemProperty -Path $k -EA SilentlyContinue; if(-not $it){ continue }; $v=$it.PSObject.Properties[$n].Value; if($null -ne $v -and [int]$v -ne 0){ Add-Find $f @{Type='Policy';Key=$k;Name=$n;Desc=(SF 'fnd.setting' (S $c['L']))} } }
+    foreach($c in $checks){ $k=$c['K']; $n=$c['N']; Tick $n; $it=Get-ItemProperty -Path $k -EA SilentlyContinue; if(-not $it){ continue }; $v=$it.PSObject.Properties[$n].Value; if($null -ne $v -and [int]$v -ne 0){ Add-Find $f @{Type='Policy';Key=$k;Name=$n;Desc=(SF 'fnd.setting' (S $c['L']))} } }
     $sk='HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\Hidden\SHOWALL'
     $cv=(Get-ItemProperty -Path $sk -Name 'CheckedValue' -EA SilentlyContinue).CheckedValue
     if($null -ne $cv -and [int]$cv -ne 1){ Add-Find $f @{Type='Policy';Key=$sk;Name='CheckedValue';Set=1;Desc=(S 'fnd.showall')} }
@@ -1307,20 +1313,51 @@ function Add-Ignored($keys){
     }catch{}
 }
 function Clear-Ignored { Remove-Item -LiteralPath $ignFile -Force -EA SilentlyContinue }
+function Set-StepTotal($n){
+    if(-not $script:live){ return }
+    $script:stBase=$script:stFr; $script:stTot=[Math]::Max(1,$n); $script:stDone=0
+}
+function Tick($what){
+    if(-not $script:live){ return }
+    $script:stDone++
+    if($script:stTot -gt 0){ $fr=$script:stBase+(1-$script:stBase)*[Math]::Min(1.0,[double]$script:stDone/$script:stTot) }
+    else{ $fr=0.3*[double]$script:stDone/($script:stDone+200) }
+    if($fr -gt $script:stFr){ $script:stFr=$fr }
+    if($script:tw.ElapsedMilliseconds -lt 40){ return }
+    $script:tw.Restart()
+    Draw-Live "$what"
+}
+function Draw-Live($what){
+    $pc=$script:w0+$script:w1*$script:stFr
+    $w=79; try{ $w=[Console]::WindowWidth-1 }catch{}
+    $room=[Math]::Max(0,$w-36)
+    if($what.Length -gt $room){ $what='..'+$what.Substring($what.Length-[Math]::Max(0,$room-2)) }
+    try{ [Console]::SetCursorPosition(0,$script:liveRow) }catch{}
+    TN ("  %{0,5:N1} " -f $pc) $ACC
+    TN ("{0,-26}" -f $script:stLbl) 'Gray'
+    TN ("{0,-$room}" -f $what) 'DarkGray'
+}
 function Find-PcRemnants($show=$false){
     $f=New-Object System.Collections.ArrayList
     $steps=@(${function:Find-Procs},${function:Find-RunKeys},${function:Find-Startup},${function:Find-Tasks},${function:Find-Services},${function:Find-MinerFiles},${function:Find-Scripts},${function:Find-Exclusions},${function:Find-Sabotage})
     $ign=@(Get-Ignored); $all=0; $sw=[Diagnostics.Stopwatch]::StartNew()
+    $wt=@(8,4,3,12,22,2,40,4,5); $wsum=0
+    $script:live=$show -and -not [Console]::IsOutputRedirected; $script:tw=[Diagnostics.Stopwatch]::StartNew()
     for($i=0;$i -lt $steps.Count;$i++){
         $script:chk=0; $before=$f.Count
+        $script:w0=$wsum; $script:w1=$wt[$i]; $script:stFr=0; $script:stBase=0; $script:stTot=0; $script:stDone=0
         if($show){
             $lb=(S ('scan.s'+($i+1))).Split('|')
-            TN ("  %{0,-3} " -f [int][Math]::Round(100*($i+1)/$steps.Count)) $ACC
-            TN ("{0,-26}" -f $lb[0]) 'Gray'
+            $script:stLbl=$lb[0]; if(-not $script:live){ TN ("  %{0,5:N1} " -f ($wsum+$wt[$i])) $ACC; TN ("{0,-26}" -f $lb[0]) 'Gray' }
+            if($script:live){ $script:liveRow=[Console]::CursorTop; Draw-Live '' }
         }
         & $steps[$i] $f
-        $all+=$script:chk
+        $all+=$script:chk; $wsum+=$wt[$i]
         if($show){
+            $w=79; try{ $w=[Console]::WindowWidth-1 }catch{}
+            if($script:live){ try{ [Console]::SetCursorPosition(0,$script:liveRow); Write-Host (' '*$w) -NoNewline; [Console]::SetCursorPosition(0,$script:liveRow) }catch{}
+            TN ("  %{0,5:N1} " -f $wsum) $ACC
+            TN ("{0,-26}" -f $lb[0]) 'Gray' }
             TN ("{0,14}  " -f ("{0:N0} {1}" -f $script:chk,$lb[1])) 'DarkGray'
             $hit=@($f.ToArray() | Select-Object -Skip $before | Where-Object { $ign -notcontains (Find-Key $_) }).Count
             Write-Host '[' -NoNewline -ForegroundColor DarkGray
@@ -1328,6 +1365,7 @@ function Find-PcRemnants($show=$false){
             Write-Host ']' -ForegroundColor DarkGray
         }
     }
+    $script:live=$false
     if($show){ Write-Host ''; T (SF 'scan.sum' ("{0:N0}" -f $all),("{0:N1}" -f $sw.Elapsed.TotalSeconds)) $ACC2; $script:bol=$true }
     $ign=@(Get-Ignored)
     if($ign.Count -eq 0){ return @($f.ToArray()) }
