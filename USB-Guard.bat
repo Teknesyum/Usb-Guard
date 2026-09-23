@@ -35,7 +35,7 @@ exit /b
 param([switch]$Watch,[string]$Drive,[switch]$Bg,[switch]$Selfupd,[switch]$Auto)
 $ErrorActionPreference = 'SilentlyContinue'
 try{ [Console]::OutputEncoding = [Text.Encoding]::UTF8 }catch{}
-$VER = '1.25'
+$VER = '1.26'
 $ACC = 'Cyan'
 $ACC2 = 'Magenta'
 $W = 60
@@ -174,6 +174,18 @@ $STRTR = @{
 
  'scan.head'    = "  [ Bu PC - Solucan Kalıntıları ]"
  'scan.spin'    = "Süreçler, Kayıtlar, Görevler, Servisler"
+ 'scan.s1'      = "Çalışan süreçler|süreç"
+ 'scan.s2'      = "Başlangıç kayıtları|değer"
+ 'scan.s3'      = "Başlangıç klasörleri|dosya"
+ 'scan.s4'      = "Zamanlanmış görevler|görev"
+ 'scan.s5'      = "Windows servisleri|servis"
+ 'scan.s6'      = "Sistem klasörü (madenci)|konum"
+ 'scan.s7'      = "Gizli betikler|klasör"
+ 'scan.s8'      = "Defender istisnaları|kural"
+ 'scan.s9'      = "Kilitlenen ayarlar|ayar"
+ 'scan.ok'      = "Temiz"
+ 'scan.hit'     = "{0} bulgu"
+ 'scan.sum'     = "  {0} öğe, 9 alanda {1} saniyede incelendi."
  'scan.clean'   = "  Temiz. Bu PC'de solucan kalıntısı bulunamadı."
  'scan.note'    = "Not: Bu tarama yüzeyseldir; yalnız solucanların kullandığı başlangıç noktalarına bakar. Tam bir virüs taraması değildir, antivirüsünün yerini tutmaz."
  'scan.found'   = "  {0} şüpheli kalıntı bulundu:"
@@ -416,6 +428,18 @@ $STREN = @{
 
  'scan.head'    = "  [ This PC - Worm Remnants ]"
  'scan.spin'    = "Processes, Registry, Tasks, Services"
+ 'scan.s1'      = "Running processes|processes"
+ 'scan.s2'      = "Startup registry|values"
+ 'scan.s3'      = "Startup folders|files"
+ 'scan.s4'      = "Scheduled tasks|tasks"
+ 'scan.s5'      = "Windows services|services"
+ 'scan.s6'      = "System folder (miner)|places"
+ 'scan.s7'      = "Hidden scripts|folders"
+ 'scan.s8'      = "Defender exclusions|rules"
+ 'scan.s9'      = "Locked settings|settings"
+ 'scan.ok'      = "Clean"
+ 'scan.hit'     = "{0} found"
+ 'scan.sum'     = "  {0} items checked in 9 areas in {1} seconds."
  'scan.clean'   = "  Clean. No worm remnants were found on this PC."
  'scan.note'    = "Note: this scan is shallow; it looks only at the startup points a worm uses. It is not a full virus scan and does not replace your antivirus."
  'scan.found'   = "  {0} suspicious remnants found:"
@@ -1107,6 +1131,7 @@ function Copy-ToUsb($drives){
 function Add-Find($list,$h){ $h.Desc="$($h.Desc)"; [void]$list.Add($h) }
 function Find-Procs($f){
     foreach($p in Get-CimInstance Win32_Process){
+        $script:chk++
         $n="$($p.Name)"; $cl="$($p.CommandLine)"; $ep="$($p.ExecutablePath)"
         if($cl -match '(?i)usb-guard'){ continue }
         $bad=($n -match '(?i)^(xmrig|svctrl64|svcinsty64)\.exe$') -or ($ep -match '(?i)\\Windows \\|\\wsvcz\\') -or ($n -match '(?i)^(wscript|cscript|mshta)\.exe$' -and $cl -match $susRx)
@@ -1119,6 +1144,7 @@ function Find-RunKeys($f){
         $p=Get-ItemProperty -Path $k -EA SilentlyContinue; if(-not $p){ continue }
         foreach($pr in $p.PSObject.Properties){
             if($pr.Name -match '^PS(Path|ParentPath|ChildName|Drive|Provider)$'){ continue }
+            $script:chk++
             $v="$($pr.Value)"; if($v -match '(?i)usb-guard'){ continue }
             if($v -notmatch $susRx){ continue }
             if($v -match '(?i)\\(Temp|Public)\\[^"]*\.exe' -and -not ($v -match $knownNames) -and (Test-Trusted $v)){
@@ -1129,6 +1155,7 @@ function Find-RunKeys($f){
             Add-Find $f @{Type='Reg';Key=$k;Name=$pr.Name;Desc=("{0} = {1}" -f $pr.Name,$v)}
         }
     }
+    $script:chk+=15
     $wlk='HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Winlogon'
     $wl=Get-ItemProperty -Path $wlk -EA SilentlyContinue
     if($wl.Shell -and "$($wl.Shell)" -ne 'explorer.exe'){ Add-Find $f @{Type='Reg';Key=$wlk;Name='Shell';Restore='explorer.exe';Desc=("Winlogon Shell = {0}" -f $wl.Shell)} }
@@ -1156,7 +1183,7 @@ function Find-Startup($f){
     $dirs=@((Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs\Startup'),(Join-Path $env:ProgramData 'Microsoft\Windows\Start Menu\Programs\StartUp'))
     foreach($st in $dirs){
         Get-ChildItem -LiteralPath $st -Force -File -EA SilentlyContinue | ForEach-Object {
-            $bad=$false
+            $bad=$false; $script:chk++
             if($_.Name -match $scriptExt){ $bad=$true }
             elseif($_.Extension -match '(?i)^\.lnk$'){ $bad=((Lnk-Info $_.FullName) -match $susRx) }
             elseif($_.Extension -match '(?i)^\.exe$'){ $bad=($_.Name -match '(?i)^(xmrig|svctrl64|svcinsty64)') }
@@ -1166,6 +1193,7 @@ function Find-Startup($f){
 }
 function Find-Tasks($f){
     $tasks=Get-ScheduledTask -EA SilentlyContinue | Where-Object { $_.TaskPath -notlike '\Microsoft\*' }
+    $script:chk+=@(Get-ScheduledTask -EA SilentlyContinue).Count
     foreach($t in $tasks){
         foreach($a in @($t.Actions)){
             $cmd=("{0} {1}" -f $a.Execute,$a.Arguments)
@@ -1215,6 +1243,7 @@ function Find-Services($f){
     $svcRx='(?i)\\Temp\\|\\Windows \\|\\u\d{6}\.(dll|dat)|wsvcz|svctrl64|svcinsty64|xmrig|\.(vbs|js|bat|cmd)\b'
     $dllRx='(?i)\\Temp\\|\\AppData\\|\\ProgramData\\|\\Users\\|\\Windows \\|\\u\d{6}\.(dll|dat)|wsvcz'
     foreach($s in Get-ChildItem 'HKLM:\SYSTEM\CurrentControlSet\Services' -EA SilentlyContinue){
+        $script:chk++
         $ip="$((Get-ItemProperty -Path $s.PSPath -EA SilentlyContinue).ImagePath)"
         $dll="$((Get-ItemProperty -Path (Join-Path $s.PSPath 'Parameters') -EA SilentlyContinue).ServiceDll)"
         $hit=$false
@@ -1226,6 +1255,7 @@ function Find-Services($f){
     if($dc -and $dc -notmatch '(?i)\\system32\\rpcss\.dll$'){ Add-Find $f @{Type='SvcDll';Name='DcomLaunch';Restore='%SystemRoot%\system32\rpcss.dll';Desc=("DcomLaunch ServiceDll = {0}" -f $dc)} }
 }
 function Find-MinerFiles($f){
+    $script:chk+=6
     foreach($n in 'svcinsty64.exe','svctrl64.exe','svctrl64.dll'){ $p=Join-Path $sysDir $n; if(Test-Path -LiteralPath $p){ Add-Find $f @{Type='File';Path=$p;Desc=("System32: {0}" -f $n);Detail=$p} } }
     $wz=Join-Path $sysDir 'wsvcz'; if(Test-Path -LiteralPath $wz){ Add-Find $f @{Type='File';Path=$wz;Desc=(S 'fnd.wsvcz');Detail=$wz} }
     if(Test-Path -LiteralPath $spaceDir){ Add-Find $f @{Type='File';Path=$spaceDir;Desc=(S 'fnd.fakedir');Detail=$spaceDir} }
@@ -1251,7 +1281,8 @@ function Find-Scripts($f){
             if($n -ge 1500){ break }
         } }catch{}
     }
-    foreach($d in ($dirs | Select-Object -Unique)){
+    $ud=@($dirs | Select-Object -Unique); $script:chk+=$ud.Count
+    foreach($d in $ud){
         $files=@(); try{ $files=@([IO.Directory]::EnumerateFiles($d) | Where-Object { $_ -match $extRx }) }catch{}
         foreach($fp in $files){
             try{ $fi=New-Object IO.FileInfo $fp; if($fi.Length -gt 500KB -or $fi.Length -lt 64){ continue } }catch{ continue }
@@ -1267,6 +1298,7 @@ function Find-Exclusions($f){
         foreach($sub in @('Paths','Extensions','Processes')){
             $it=Get-Item -Path (Join-Path $b $sub) -EA SilentlyContinue; if(-not $it){ continue }
             foreach($p in $it.Property){
+                $script:chk++
                 if($sub -eq 'Paths' -and $p -notmatch $rx){ continue }
                 if($seen -contains $p){ continue }
                 $seen+=$p
@@ -1287,6 +1319,7 @@ function Find-Sabotage($f){
         @{K='HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System';N='DisableTaskMgr';L='fnd.taskmgrm'},
         @{K='HKLM:\Software\Microsoft\Windows\CurrentVersion\Policies\System';N='DisableRegistryTools';L='fnd.regeditm'}
     )
+    $script:chk+=$checks.Count+1
     foreach($c in $checks){ $k=$c['K']; $n=$c['N']; $it=Get-ItemProperty -Path $k -EA SilentlyContinue; if(-not $it){ continue }; $v=$it.PSObject.Properties[$n].Value; if($null -ne $v -and [int]$v -ne 0){ Add-Find $f @{Type='Policy';Key=$k;Name=$n;Desc=(SF 'fnd.setting' (S $c['L']))} } }
     $sk='HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced\Folder\Hidden\SHOWALL'
     $cv=(Get-ItemProperty -Path $sk -Name 'CheckedValue' -EA SilentlyContinue).CheckedValue
@@ -1308,9 +1341,28 @@ function Add-Ignored($keys){
     }catch{}
 }
 function Clear-Ignored { Remove-Item -LiteralPath $ignFile -Force -EA SilentlyContinue }
-function Find-PcRemnants {
+function Find-PcRemnants($show=$false){
     $f=New-Object System.Collections.ArrayList
-    Find-Procs $f; Find-RunKeys $f; Find-Startup $f; Find-Tasks $f; Find-Services $f; Find-MinerFiles $f; Find-Scripts $f; Find-Exclusions $f; Find-Sabotage $f
+    $steps=@(${function:Find-Procs},${function:Find-RunKeys},${function:Find-Startup},${function:Find-Tasks},${function:Find-Services},${function:Find-MinerFiles},${function:Find-Scripts},${function:Find-Exclusions},${function:Find-Sabotage})
+    $ign=@(Get-Ignored); $all=0; $sw=[Diagnostics.Stopwatch]::StartNew()
+    for($i=0;$i -lt $steps.Count;$i++){
+        $script:chk=0; $before=$f.Count
+        if($show){
+            $lb=(S ('scan.s'+($i+1))).Split('|')
+            TN ("  %{0,-3} " -f [int][Math]::Round(100*($i+1)/$steps.Count)) $ACC
+            TN ("{0,-26}" -f $lb[0]) 'Gray'
+        }
+        & $steps[$i] $f
+        $all+=$script:chk
+        if($show){
+            TN ("{0,14}  " -f ("{0:N0} {1}" -f $script:chk,$lb[1])) 'DarkGray'
+            $hit=@($f.ToArray() | Select-Object -Skip $before | Where-Object { $ign -notcontains (Find-Key $_) }).Count
+            Write-Host '[' -NoNewline -ForegroundColor DarkGray
+            if($hit -gt 0){ Write-Host (SF 'scan.hit' $hit) -NoNewline -ForegroundColor Red } else { Write-Host (S 'scan.ok') -NoNewline -ForegroundColor Green }
+            Write-Host ']' -ForegroundColor DarkGray
+        }
+    }
+    if($show){ Write-Host ''; T (SF 'scan.sum' ("{0:N0}" -f $all),("{0:N1}" -f $sw.Elapsed.TotalSeconds)) $ACC2; $script:bol=$true }
     $ign=@(Get-Ignored)
     if($ign.Count -eq 0){ return @($f.ToArray()) }
     return @($f.ToArray() | Where-Object { $ign -notcontains (Find-Key $_) })
@@ -1349,9 +1401,7 @@ function Clean-PcRemnants($found){
 }
 function Scan-Pc {
     Write-Host ''; T (S 'scan.head') $ACC2
-    $script:scanTmp=@()
-    Spin (S 'scan.spin') { $script:scanTmp=@(Find-PcRemnants) } | Out-Null
-    $found=@($script:scanTmp)
+    $found=@(Find-PcRemnants $true)
     NL
     if($found.Count -eq 0){
         $script:pcFound=@()

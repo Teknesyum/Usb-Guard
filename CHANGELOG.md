@@ -1,6 +1,10 @@
 # Changelog
 
 
+## v1.26
+
+- The PC scan shows its work: nine areas, one line each, with a percentage, the number of items checked and the result, then a total line.
+
 ## v1.25
 
 - Opens in its own console window at its own size instead of the terminal's wide default.
