@@ -35,7 +35,7 @@ exit /b
 param([switch]$Watch,[string]$Drive,[switch]$Bg,[switch]$Selfupd)
 $ErrorActionPreference = 'SilentlyContinue'
 try{ [Console]::OutputEncoding = [Text.Encoding]::UTF8 }catch{}
-$VER = '1.22'
+$VER = '1.23'
 $ACC = 'Cyan'
 $ACC2 = 'Magenta'
 $W = 60
@@ -253,6 +253,10 @@ $STRTR = @{
  'adv.dxon'     = "Açık"
 
  'mn.cleanpc'   = "Bu PC'yi Temizle  (Önerilen)"
+ 'mn.setupall'  = "Her Yere Kur ve Tara"
+ 'sa.head'      = "  [ Her Yere Kur ve Tara ]"
+ 'sa.nousb'     = "  Uygun USB yok; USB'ye kurulum atlandı."
+ 'sa.done'      = "  Kurulum bitti; tarama sonucu yukarıda."
  'mn.fixall'    = "Tümünü Düzelt"
  'mn.fix'       = "Düzelt  ->  {0} {1}"
  'mn.scanpc'    = "Bu PC'yi Tara"
@@ -293,6 +297,7 @@ $STRTR = @{
  'help.fix'     = "Seçili USB'yi temizler ve aşılar: solucan sürecini`ndurdurur, zararlı kısayolları siler (alt klasörler dahil),`ngizlenen dosyalarını köke geri taşır, yükü karantinaya`nalır, ardından solucanın kullandığı adları kilitli`nklasörlerle işgal eder. Dosyaların silinmez; çakışan ad`n' (2)' eki alır."
  'help.adv'     = "İzleyici, betik motoru, USB'den çalıştırma anahtarı,`ndil seçimi ve karantinadan geri alma."
  'help.back'    = "Ana menüye döner."
+ 'help.setall'  = "Tek seçimle hepsini yapar: USB-Guard'ı C:'ye kopyalar,`narka plan izleyicisini kurar, takılı uygun USB'lerin`nköküne kopyalar ve en sonunda bu bilgisayarı solucan`nkalıntısı için tarar. Tarama bulduklarını yine onay`nsorarak temizler."
  'help.install' = "Arka planda küçük bir izleyici kurar (HKCU Run).`nVirüslü USB takıldığında Evet/Hayır sorusuyla temizlemeyi`nönerir. Tıklamadan hiçbir şey yapmaz."
  'help.uninst'  = "Arka plan izleyicisini ve Run kaydını kaldırır."
  'help.wshoff'  = "Windows Script Host'u kapatır (tek kayıt değeri).`n.vbs / .js solucanları wscript.exe ile çalışır; kapalıyken`nkısayola tıklansa bile yük çalışmaz.`nYan etki: meşru .vbs / .js betikleri de durur (bazı yazıcı`nkurulumları, kurumsal logon betikleri, eski kurulum`nsihirbazları). Aynı menüden geri açılır."
@@ -476,6 +481,10 @@ $STREN = @{
  'adv.dxon'     = "On"
 
  'mn.cleanpc'   = "Clean This PC  (Recommended)"
+ 'mn.setupall'  = "Install Everywhere And Scan"
+ 'sa.head'      = "  [ Install Everywhere And Scan ]"
+ 'sa.nousb'     = "  No eligible USB; the USB step was skipped."
+ 'sa.done'      = "  Installed; the scan result is above."
  'mn.fixall'    = "Fix Them All"
  'mn.fix'       = "Fix  ->  {0} {1}"
  'mn.scanpc'    = "Scan This PC"
@@ -516,6 +525,7 @@ $STREN = @{
  'help.fix'     = "Cleans and guards the selected USB: stops the worm`nprocess, deletes malicious shortcuts (subfolders too),`nmoves your hidden files back to the root, quarantines`nthe payload, then occupies the names the worm needs`nwith locked folders. Your files are never deleted; a`nname clash gets a ' (2)' suffix."
  'help.adv'     = "The watcher, the script engine, the USB execute switch,`nthe language choice and restore from quarantine."
  'help.back'    = "Returns to the main menu."
+ 'help.setall'  = "Does all of it in one go: copies USB-Guard to C:,`ninstalls the background watcher, copies it to the root of`nevery eligible USB that is plugged in, and finally scans`nthis computer for worm remnants. The scan still asks`nbefore it removes anything."
  'help.install' = "Installs a small background watcher (HKCU Run). When an`ninfected USB is plugged in it offers to clean it with a`nYes/No prompt. Nothing runs without your click."
  'help.uninst'  = "Removes the background watcher and its Run entry."
  'help.wshoff'  = "Turns Windows Script Host off (one registry value).`nThe .vbs / .js worms run through wscript.exe; with this`noff, a clicked shortcut launches nothing.`nSide effect: legitimate .vbs / .js scripts stop too (some`nprinter installers, corporate logon scripts, old setup`nwizards). Reversible from the same menu."
@@ -1525,6 +1535,7 @@ function Show-Help($it){
 }
 function Help-For($a){
     switch($a){
+        'setupall'  { S 'help.setall' }
         'scanpc'    { S 'help.scanpc' }
         'fixall'    { S 'help.fixall' }
         'fix'       { S 'help.fix' }
@@ -1632,9 +1643,18 @@ function Render-Items($items,$idx,$top,$esc,$hasLeft=$false,$gap=1){
     Row $hint 'DarkGray'
 }
 function Add-Help($items){ foreach($it in $items){ if($it.Action -ne 'sep'){ $it.Help=Help-For $it.Action } }; return $items }
+function Setup-All($drives){
+    T (S 'sa.head') $ACC2
+    Install-Watcher
+    if($drives.Count -gt 0){ Copy-ToUsb $drives } else { Write-Host ''; T (S 'sa.nousb') 'DarkYellow' }
+    Scan-Pc
+    $script:scanned=$true
+    Write-Host ''; T (S 'sa.done') 'Green'
+}
 function Build-Items($drives){
     $items=@()
     $dirty=$script:pcFound.Count -gt 0
+    $items += @{Text=(S 'mn.setupall'); Action='setupall'}
     if($dirty){ $items += @{Text=(S 'mn.cleanpc'); Action='scanpc'; Hot=$true} }
     if($drives.Count -gt 1){ $items += @{Text=(S 'mn.fixall'); Action='fixall'} }
     foreach($d in $drives){ $lbl=if($d.VolumeName){$d.VolumeName}else{(S 'st.nolabel')}; $items += @{Text=(SF 'mn.fix' $d.DeviceID,$lbl); Action='fix'; Drive=$d} }
@@ -1800,6 +1820,7 @@ function Run-Menu {
             'restoreq'  { Restore-Menu }
             'ignclear'  { Clear-Ignored; $script:pcFound=@(Find-PcRemnants) }
             'lang'      { Choose-Lang }
+            'setupall'  { Clear-Host; Print-Banner; Setup-All $drives; Pause-Key }
             'scanpc'    { Clear-Host; Print-Banner; Scan-Pc; $script:scanned=$true; Pause-Key }
             'copyC'     { Clear-Host; Print-Banner; Copy-ToC; Pause-Key }
             'copyUsb'   { if($drives.Count -eq 1){ Clear-Host; Print-Banner; Copy-ToUsb $drives; Pause-Key } else { $sel=Pick-Usb $drives; if($sel){ Clear-Host; Print-Banner; Copy-ToUsb $sel; Pause-Key } } }

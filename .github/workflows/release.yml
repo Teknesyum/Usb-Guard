@@ -67,6 +67,13 @@ jobs:
         shell: pwsh
         run: ./tools/tar.ps1
 
+      - name: Menu tests
+        shell: pwsh
+        run: |
+          $out = ./tools/tmenu.ps1 | Out-String
+          $out
+          if ($out -match 'FAIL') { throw 'tools/tmenu.ps1 reported a failure' }
+
       - name: Portable archive for winget
         shell: pwsh
         run: |

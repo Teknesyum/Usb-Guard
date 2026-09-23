@@ -1,6 +1,16 @@
 # Changelog
 
 
+## v1.23
+
+One entry that does the whole setup.
+
+- **"Install Everywhere And Scan" is now the first entry of the main menu.** It copies
+  USB-Guard to `C:`, installs the background watcher, copies it to the root of every
+  eligible USB that is plugged in, and finishes by scanning this computer for worm
+  remnants. The scan still lists what it found and asks before removing anything.
+
+
 ## v1.22
 
 The background watcher keeps itself up to date.
