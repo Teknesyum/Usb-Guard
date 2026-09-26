@@ -44,6 +44,10 @@ jobs:
           "SHA=$after" >> $env:GITHUB_ENV
           "BYTES=$((Get-Item USB-Guard.bat).Length)" >> $env:GITHUB_ENV
 
+      - name: Colours meet the tokens
+        shell: powershell
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File tools/tui.ps1 -Static
+
       - name: It parses
         shell: pwsh
         run: |

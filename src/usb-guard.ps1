@@ -1,9 +1,11 @@
 param([switch]$Watch,[string]$Drive,[switch]$Bg,[switch]$Selfupd,[switch]$Auto)
 $ErrorActionPreference = 'SilentlyContinue'
 try{ [Console]::OutputEncoding = [Text.Encoding]::UTF8 }catch{}
-$VER = '1.27'
+$VER = '1.28'
 $ACC = 'Cyan'
 $ACC2 = 'Magenta'
+$TK = @{ 'surface'='#000000'; 'text'='#FFFFFF'; 'renk-1'='#6FB7FF'; 'success'='#66F09A'; 'danger-text'='#FA8CFF'; 'warning'='#FFD24D' }
+$TKMAP = @{ 0='surface'; 7='text'; 8='text'; 15='text'; 11='renk-1'; 13='renk-1'; 10='success'; 12='danger-text'; 6='warning'; 14='warning' }
 $W = 60
 $script:M = ''
 $script:bol = $true
@@ -651,6 +653,42 @@ function Show-Footer {
     TN '  GitHub  : ' 'DarkGray'; Link 'https://github.com/Teknesyum' 'github.com/Teknesyum' 'White'; NL
     TN '  Sponsor : ' 'DarkGray'; Link 'https://github.com/sponsors/Teknesyum' 'github.com/sponsors/Teknesyum' $ACC2; NL
     NL
+}
+function Pal-Type {
+    if('Win32p' -as [type]){ return $true }
+    try{
+        Add-Type -TypeDefinition @'
+using System;using System.Runtime.InteropServices;
+public class Win32p{
+ [StructLayout(LayoutKind.Sequential)] public struct COORD{public short X,Y;}
+ [StructLayout(LayoutKind.Sequential)] public struct SR{public short L,T,R,B;}
+ [StructLayout(LayoutKind.Sequential)] public struct INFO{
+  public uint cb; public COORD size; public COORD cur; public ushort attr; public SR win; public COORD max; public ushort pop; public int full;
+  [MarshalAs(UnmanagedType.ByValArray, SizeConst=16)] public uint[] tbl; }
+ [DllImport("kernel32.dll", SetLastError=true)] public static extern IntPtr GetStdHandle(int h);
+ [DllImport("kernel32.dll", SetLastError=true)] public static extern bool GetConsoleScreenBufferInfoEx(IntPtr h, ref INFO i);
+ [DllImport("kernel32.dll", SetLastError=true)] public static extern bool SetConsoleScreenBufferInfoEx(IntPtr h, ref INFO i);
+ public static uint[] Get(){ var i=new INFO(); i.cb=(uint)Marshal.SizeOf(typeof(INFO)); if(!GetConsoleScreenBufferInfoEx(GetStdHandle(-11),ref i)) return null; return i.tbl; }
+ public static bool Set(uint[] t){ var i=new INFO(); i.cb=(uint)Marshal.SizeOf(typeof(INFO)); var h=GetStdHandle(-11); if(!GetConsoleScreenBufferInfoEx(h,ref i)) return false; i.win.R++; i.win.B++; i.tbl=t; return SetConsoleScreenBufferInfoEx(h,ref i); }
+}
+'@
+        return $true
+    }catch{ return $false }
+}
+function Hex-Ref($h){ $h=$h.TrimStart('#'); return [uint32]([Convert]::ToInt32($h.Substring(4,2),16)*65536+[Convert]::ToInt32($h.Substring(2,2),16)*256+[Convert]::ToInt32($h.Substring(0,2),16)) }
+function Set-Palette {
+    if(-not (Pal-Type)){ return }
+    try{
+        $cur=[Win32p]::Get(); if(-not $cur){ return }
+        if(-not $script:palOld){ $script:palOld=[uint32[]]$cur.Clone() }
+        $t=[uint32[]]$cur.Clone()
+        foreach($k in $TKMAP.Keys){ $t[[int]$k]=Hex-Ref $TK[$TKMAP[$k]] }
+        [void][Win32p]::Set($t)
+    }catch{}
+}
+function Restore-Palette {
+    if(-not $script:palOld){ return }
+    try{ [void][Win32p]::Set($script:palOld) }catch{}
 }
 function Fit-Window($rows=36){
     try{
@@ -1330,7 +1368,7 @@ function Tick($what){
 function Draw-Live($what){
     $pc=$script:w0+$script:w1*$script:stFr
     $w=79; try{ $w=[Console]::WindowWidth-1 }catch{}
-    $room=[Math]::Max(0,$w-36)
+    $room=[Math]::Max(0,$w-36); $what=($what -replace '[\x00-\x1F\x7F]',' ') -replace '[^\x20-ɏ]','?'
     if($what.Length -gt $room){ $what='..'+$what.Substring($what.Length-[Math]::Max(0,$room-2)) }
     try{ [Console]::SetCursorPosition(0,$script:liveRow) }catch{}
     TN ("  %{0,5:N1} " -f $pc) $ACC
@@ -1355,14 +1393,15 @@ function Find-PcRemnants($show=$false){
         $all+=$script:chk; $wsum+=$wt[$i]
         if($show){
             $w=79; try{ $w=[Console]::WindowWidth-1 }catch{}
-            if($script:live){ try{ [Console]::SetCursorPosition(0,$script:liveRow); Write-Host (' '*$w) -NoNewline; [Console]::SetCursorPosition(0,$script:liveRow) }catch{}
+            if($script:live){ try{ [Console]::SetCursorPosition(0,$script:liveRow); Write-Host (' '*([Console]::BufferWidth-1)) -NoNewline; [Console]::SetCursorPosition(0,$script:liveRow) }catch{}
             TN ("  %{0,5:N1} " -f $wsum) $ACC
             TN ("{0,-26}" -f $lb[0]) 'Gray' }
             TN ("{0,14}  " -f ("{0:N0} {1}" -f $script:chk,$lb[1])) 'DarkGray'
             $hit=@($f.ToArray() | Select-Object -Skip $before | Where-Object { $ign -notcontains (Find-Key $_) }).Count
             Write-Host '[' -NoNewline -ForegroundColor DarkGray
             if($hit -gt 0){ Write-Host (SF 'scan.hit' $hit) -NoNewline -ForegroundColor Red } else { Write-Host (S 'scan.ok') -NoNewline -ForegroundColor Green }
-            Write-Host ']' -ForegroundColor DarkGray
+            Write-Host ']' -NoNewline -ForegroundColor DarkGray
+            $pad=0; try{ $pad=[Console]::BufferWidth-[Console]::CursorLeft }catch{}; Write-Host (' '*[Math]::Max(0,$pad)) -NoNewline; if([Console]::CursorLeft -ne 0){ Write-Host '' }
         }
     }
     $script:live=$false
@@ -1995,16 +2034,19 @@ if(-not $env:UG_CONHOST -and $env:SELFBAT -and (In-Terminal)){
     try{ Start-Process conhost.exe -ArgumentList $a; return }catch{}
 }
 Migrate-Base
+Set-Palette
 Fit-Window
-if(-not $script:savedLang -and -not $Drive){ Choose-Lang }
-if($Drive){
-    Clear-Host; Print-Banner
-    $letter=$Drive.TrimEnd(':').Substring(0,1).ToUpper()
-    if("$letter`:" -eq $env:SystemDrive){ T (S 'dr.sysdrive') 'Red'; Pause-Key; return }
-    $dsk=Get-CimInstance Win32_LogicalDisk -Filter "DeviceID='$letter`:'"
-    if(-not $dsk){ T (SF 'dr.notfound' "$letter`:") 'Red'; Pause-Key; return }
-    if($Auto){ Auto-Fix $dsk } else { Process-Drive $dsk }
-    Show-Footer; Pause-Key; return
+try{
+    if(-not $script:savedLang -and -not $Drive){ Choose-Lang }
+    if($Drive){
+        Clear-Host; Print-Banner
+        $letter=$Drive.TrimEnd(':').Substring(0,1).ToUpper()
+        if("$letter`:" -eq $env:SystemDrive){ T (S 'dr.sysdrive') 'Red'; Pause-Key; return }
+        $dsk=Get-CimInstance Win32_LogicalDisk -Filter "DeviceID='$letter`:'"
+        if(-not $dsk){ T (SF 'dr.notfound' "$letter`:") 'Red'; Pause-Key; return }
+        if($Auto){ Auto-Fix $dsk } else { Process-Drive $dsk }
+        Show-Footer; Pause-Key; return
+    }
+    Run-Menu
 }
-
-Run-Menu
+finally{ Restore-Palette }

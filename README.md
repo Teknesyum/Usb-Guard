@@ -215,7 +215,7 @@ Removable USB drives and USB hard disks are listed. The system drive, cloud, and
 partitions are hidden on purpose.
 
 It is a plain `.bat`, so **cmd** runs it. Inside, it uses the **Windows PowerShell 5.1** that
-ships with every Windows 7 and later. No PowerShell 7, no changed default shell.
+ships with every Windows 7 and later. Nothing extra to install, and your default shell stays as it is.
 
 
 ---

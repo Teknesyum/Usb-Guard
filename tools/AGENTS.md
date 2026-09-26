@@ -13,9 +13,8 @@ fonksiyonları doğrudan çağırır. Yollar `$PSScriptRoot`'a göre çözülür
 - `tlabel.ps1` — `autorun.inf` etiket ayrıştırma ve ad temizleme
 - `tmenu.ps1` — ana menü sırası ve "Her Yere Kur ve Tara" seçeneği
 - `tauto.ps1` — `subst` ile virüslü sahte USB; otomatik düzeltme, yüzde ve özet
+- `tui.ps1` — renk tablosu: her renk token'a bağlı, 7:1 kontrast, conhost'ta uygulanıp geri yükleniyor (`-Static` CI için)
 - `tar.ps1` — dosya-tabanlı `autorun.inf` bağışıklığı, klasör→dosya göçü, kötücül ayrımı
 
-Çalıştırma: `powershell -NoProfile -ExecutionPolicy Bypass -File tools\t117.ps1`
-
-`src/usb-guard.ps1` değişince önce `src/build.ps1`, sonra bunlar. Beklenen sonuçlar
-`docs/devir-2026-09-09.md` içinde.
+Çalıştırma: `powershell -NoProfile -ExecutionPolicy Bypass -File tools\t117.ps1`; kaynak değişince
+önce `src/build.ps1`, sonra bunlar. Beklenen sonuçlar `docs/devir-2026-09-09.md` içinde.

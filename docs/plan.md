@@ -1,80 +1,20 @@
-# Plan — 9 Eylül 2026 turu
+# Plan — UI Audit (uc), 2026-09-27
 
-Devir notundaki üç açık madde, artı devralma sırasında bulunan bir hata. Kullanıcı
-"önerdiğin sırayla hepsini yap" dedi. Sıra, bağımlılık yüzünden 0 → 3 → 1 → 2 oldu:
-winget manifesti yayında bir `.zip` varlığı ister, onu da CI üreten yayın akışı koyar.
+Usb-Guard is a console program (cmd + PowerShell 5.1). It has no web, WPF or Avalonia view,
+so the standard is applied through the console colour table: the 16 console slots the program
+writes are remapped to the owner's tokens at start and restored at exit.
 
-
-## 0 — autorun.inf adı kaybı (bitti, v1.19, `7cd2e44`)
-
-Bağışıklık `autorun.inf` dosyasını kilitli klasörle değiştirirken siliyordu; Windows
-çıkarılabilir sürücünün adını o dosyanın `label=` satırından okuduğu için sürücünün adı
-kalıcı olarak kayboluyordu. Karantinaya da alınmıyordu, geri dönüşü yoktu.
-
-Ad artık dosya yok edilmeden önce okunup dosya sistemi birim etiketine yazılıyor. Etiket
-dosya değil meta veridir; solucan `autorun.inf` bırakarak ele geçiremez. Ad yoksa ve
-kurtarılacak bir şey de yoksa tek satırlık soru sorulup yazılıyor.
-
-Değer saldırganın denetimindeki dosyadan geldiği için temizleniyor ve kabuğa hiç
-verilmiyor — `SetVolumeLabelW`. Test: `tools/tlabel.ps1`.
-
-
-## 3 — CI ile yeniden üretilebilir yayın (bitti, `131b72e`)
-
-`.github/workflows/release.yml`. Etiket itilince `windows-latest` üzerinde:
-
-1. `$VER` ile etiket birebir aynı mı,
-2. `src/build.ps1` çalıştırılır ve üretilen `USB-Guard.bat` depodakiyle **bayt bayt**
-   aynı mı (değilse yayın durur),
-3. üretilen dosya ayrıştırılıyor mu,
-4. `t117` ve `tlabel` koşar,
-5. `USB-Guard-<ver>.zip` üretilir,
-6. yayın açılır; sürüm notuna iki dosyanın sha256'sı tablo olarak girer.
-
-Böylece hash'i herkes depodan yeniden üretebilir; derlemeyi elle yapıp yükleme biter.
-Mevcut `virustotal.yml` yayın açılışına bağlı olduğu için kendiliğinden zincirlenir.
-
-
-## 1 — Winget manifesti (bloke, `b0` — winget `.bat` kabul etmiyor)
-
-`.bat` winget'in tanıdığı bir kurulum türü değil. Yol: `InstallerType: zip` +
-`NestedInstallerType: portable`, arşivin içindeki `USB-Guard.bat` takma adla bağlanır.
-Arşivi 3. madde üretiyor — bağımlılık bu.
-
-Manifest üç dosyadır (`version`, `installer`, `locale`), depoda `packaging/winget/`
-altında durur; `microsoft/winget-pkgs` deposuna PR olarak gider.
-
-
-## 2 — Kendinden imzalı Authenticode (bekliyor — 1. madde ile aynı karara bağlı)
-
-En pahalısı ve tek başına mimariyi değiştiren madde: Authenticode imzası `.bat`'e
-gömülemez, `.ps1`'e gömülür. Ürünün tamamı "tek dosya polyglot" fikri üzerine kurulu
-olduğu için imza, iki dosyalı dağıtıma geçmeden eklenemez.
-
-Bu yüzden 2. madde bir kod işi değil, bir dağıtım kararıdır ve kullanıcıya sorulacaktır.
-Ayrıntı ve seçenekler işin sonundaki raporda.
-
-
-## Turun sonucu
-
-0 ve 3 bitti, v1.19 yayında ve hash zinciri CI tarafından doğrulanıyor.
-
-1 ve 2 aynı duvara çarptı: ikisi de "yayına `.bat` dışında bir dosya girsin mi"
-sorusuna bağlı. Winget `portable` yalnız çalıştırılabilir ikili alıyor, Authenticode
-imzası da `.bat`'e gömülemiyor. Bu bir kod işi değil, ürün kararı; kullanıcıya soruldu.
-
-
-## Karar — 1 ve 2 ertelendi
-
-Kullanıcı kararı fable'a bıraktı. Cevap birebir `docs/netlestirme/002` içinde.
-
-Karar **B**: tek dosya `.bat` kalıyor. A'nın bedeli sabit, getirisi ölçülen talep sıfırken
-sıfır; kendinden imzalı sertifika SmartScreen'de bir şey kazandırmıyor. C'nin de hizmet
-ettiği kimse yok — sıradan kullanıcı Chocolatey kurmaz.
-
-Uygulandı: winget manifestleri `trash/winget/`e, `docs/danisma/008-guven.md` 4. ve 9.
-maddeler "ERTELENDİ — eşik: dış talep" işaretlendi, iki README'ye kurulum paketinin neden
-olmadığı tek paragraf olarak girdi.
-
-Yeniden açma eşiği: ilk dış issue ya da yayın başına 50+ indirme. O noktada önce
-Chocolatey; EV/OV bütçesi çıkarsa `.exe`.
+1. Bind to the standard: `setup.js --apply --template benim` (done). Keep
+   `teknesyum-ui/theme.tokens.json`; move the unused css/react/wpf/avalonia/winforms output to
+   `trash/`.
+2. `src/usb-guard.ps1`: `$TK` token table + `Set-Palette` / `Restore-Palette`
+   (SetConsoleScreenBufferInfoEx). Slot map: Black→surface, Gray/DarkGray/White→text,
+   Cyan/Magenta→renk-1, Green→success, Red→danger-text, Yellow/DarkYellow→warning.
+3. `src/build.ps1`: fail the build when `$TK` drifts from `theme.tokens.json`.
+4. `tools/tui.ps1`: headless test — contrast of every used slot against its real ground (7:1),
+   no unmapped colour name in the source, the table is applied in a real conhost.
+5. Screen inventory + real window captures (conhost) of every screen; a fresh subagent looks
+   at the images only.
+6. Shelf books: depo (`tmp/` in .gitignore), lisans and readme-protokolu (already met),
+   kurulum-paneli (decision needed).
+7. Report `docs/ui-denetim/2026-09-27.md`, release, install to C:.

@@ -1,6 +1,10 @@
 # Changelog
 
 
+## v1.28
+
+- The console colours follow one token table (	eknesyum-ui/theme.tokens.json): every colour the program writes reads at 7:1 or better on black, the table is set at start and your own console colours come back at exit. The build fails if the table drifts from the tokens.
+
 ## v1.27
 
 - The scan progress flows in 0.1% steps on one live line that names the item being checked, redrawn at most every 40 ms; when an area finishes, only its summary line stays.
