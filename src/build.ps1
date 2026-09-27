@@ -1,4 +1,4 @@
-$src = Join-Path $PSScriptRoot 'usb-guard.ps1'
+﻿$src = Join-Path $PSScriptRoot 'usb-guard.ps1'
 $hdr = Join-Path $PSScriptRoot 'header.bat'
 $bat = Join-Path (Split-Path $PSScriptRoot -Parent) 'USB-Guard.bat'
 
@@ -14,31 +14,14 @@ $tok = Get-Content $tokFile -Raw -Encoding UTF8 | ConvertFrom-Json
 $flat = @{}
 foreach ($grp in 'brand', 'role') { foreach ($p in $tok.$grp.PSObject.Properties) { $flat[$p.Name] = $p.Value } }
 function Resolve-Tok($n) { $t = $flat[$n]; if ($null -eq $t) { throw "token missing: $n" }; if ($t.ref) { return Resolve-Tok $t.ref }; return $t.value }
-$m = [regex]::Match($body, '(?m)^\$TK = @\{(.+)\}\s*$')
-if (-not $m.Success) { throw 'no $TK table in the body' }
-$drift = @()
-foreach ($e in [regex]::Matches($m.Groups[1].Value, "'([\w-]+)'='(#[0-9A-Fa-f]{6})'")) {
-    $want = Resolve-Tok $e.Groups[1].Value
-    if ($want.ToUpper() -ne $e.Groups[2].Value.ToUpper()) { $drift += "$($e.Groups[1].Value) $($e.Groups[2].Value) -> $want" }
-}
-$mn = [regex]::Match($body, '(?m)^\$TKN = @\{(.+)\}\s*$')
-if (-not $mn.Success) { throw 'no $TKN table in the body' }
-foreach ($e in [regex]::Matches($mn.Groups[1].Value, "'([\w-]+)'=(\d+)")) {
-    $k = $e.Groups[1].Value
-    $t = if ($k -match '^space-(\d+)$') { $tok.space.($matches[1]) } elseif ($tok.size.$k) { $tok.size.$k } else { $tok.metric.$k }
-    if ($null -eq $t) { $drift += "$k missing"; continue }
-    if ([string]$t.value -ne $e.Groups[2].Value) { $drift += "$k $($e.Groups[2].Value) -> $($t.value)" }
-}
-$ml = [regex]::Match($body, '(?m)^\$LBL = @\{(.+)\}\s*$')
-if (-not $ml.Success) { throw 'no $LBL table in the body' }
+$sync = 0
+$body = [regex]::Replace($body, '(?m)^(\$TK = @\{)(.+)(\}\s*)$', { param($x) $x.Groups[1].Value + [regex]::Replace($x.Groups[2].Value, "'([\w-]+)'='(#[0-9A-Fa-f]{6})'", { param($e) $v = (Resolve-Tok $e.Groups[1].Value).ToUpper(); if ($v -ne $e.Groups[2].Value.ToUpper()) { $script:sync++ }; "'" + $e.Groups[1].Value + "'='" + $v + "'" }) + $x.Groups[3].Value })
+$body = [regex]::Replace($body, '(?m)^(\$TKN = @\{)(.+)(\}\s*)$', { param($x) $x.Groups[1].Value + [regex]::Replace($x.Groups[2].Value, "'([\w-]+)'=(\d+)", { param($e) $k = $e.Groups[1].Value; $t = if ($k -match '^space-(\d+)$') { $tok.space.($matches[1]) } elseif ($tok.size.$k) { $tok.size.$k } else { $tok.metric.$k }; if ($null -eq $t) { throw "token missing: $k" }; if ([string]$t.value -ne $e.Groups[2].Value) { $script:sync++ }; "'" + $k + "'=" + $t.value }) + $x.Groups[3].Value })
 $lab = @{}
 foreach ($lg in 'tr', 'en') { $lab[$lg] = Get-Content (Join-Path (Split-Path $tokFile) "winforms\labels.$lg.json") -Raw -Encoding UTF8 | ConvertFrom-Json }
-foreach ($e in [regex]::Matches($ml.Groups[1].Value, "'(tr|en)\|([\w.]+)'='([^']*)'")) {
-    $want = $lab[$e.Groups[1].Value].($e.Groups[2].Value)
-    if ($want -cne $e.Groups[3].Value) { $drift += "label $($e.Groups[1].Value)|$($e.Groups[2].Value) -> $want" }
-}
-if ($drift.Count) { throw ("tokens drifted: " + ($drift -join '; ')) }
-
+$body = [regex]::Replace($body, '(?m)^(\$LBL = @\{)(.+)(\}\s*)$', { param($x) $x.Groups[1].Value + [regex]::Replace($x.Groups[2].Value, "'(tr|en)\|([\w.]+)'='([^']*)'", { param($e) $v = $lab[$e.Groups[1].Value].($e.Groups[2].Value); if ($null -eq $v) { throw "label missing: $($e.Groups[2].Value)" }; if ($v -cne $e.Groups[3].Value) { $script:sync++ }; "'" + $e.Groups[1].Value + '|' + $e.Groups[2].Value + "'='" + $v + "'" }) + $x.Groups[3].Value })
+foreach ($n in 'TK', 'TKN', 'LBL') { if ($body -notmatch "(?m)^\`$$n = @\{") { throw "no `$$n table in the body" } }
+if ($sync) { [IO.File]::WriteAllText($src, $body, (New-Object Text.UTF8Encoding($true))) }
 $out = $head.TrimEnd() + "`r`n`r`n" + $body
 $out = ($out -replace "`r`n", "`n") -replace "`n", "`r`n"
 [IO.File]::WriteAllText($bat, $out, (New-Object Text.UTF8Encoding($false)))
@@ -49,7 +32,7 @@ $tail = $check.Substring($i + 4).TrimStart([char]13, [char]10)
 $norm = { param($s) ($s -replace "`r`n", "`n").Trim() }
 "bat bytes  : " + (Get-Item $bat).Length
 "body match : " + ((& $norm $tail) -eq (& $norm $body))
-"tokens     : match (colours, sizes, labels)"
+"tokens     : synced from teknesyum-ui ($sync changed)"
 "sha256     : " + (Get-FileHash $bat -Algorithm SHA256).Hash
 $e = $null
 [void][System.Management.Automation.Language.Parser]::ParseFile($bat, [ref]$null, [ref]$e)

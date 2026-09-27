@@ -1,8 +1,9 @@
 # Changelog
 
 
-## v1.29
+## v1.30
 
+- The brand blue follows the owner's new palette (#4DA6FF, 8.2:1 on black). The build now writes colours, sizes and labels from `teknesyum-ui/` into the program itself, so a palette change needs one build.
 - The USB warning is now a themed window in the owner's colours, with "Yes, Fix It" and "Not Now" buttons.
 - Setup and removal show numbered steps with a tick per step, a progress bar and a clear error line if a step fails.
 - The console window carries a shield icon in the brand colour; the brand, support and site labels come from one label file.

@@ -1,10 +1,10 @@
 ﻿param([switch]$Watch,[string]$Drive,[switch]$Bg,[switch]$Selfupd,[switch]$Auto)
 $ErrorActionPreference = 'SilentlyContinue'
 try{ [Console]::OutputEncoding = [Text.Encoding]::UTF8 }catch{}
-$VER = '1.29'
+$VER = '1.30'
 $ACC = 'Cyan'
 $ACC2 = 'Magenta'
-$TK = @{ 'surface'='#000000'; 'text'='#FFFFFF'; 'renk-1'='#6FB7FF'; 'renk-3-text'='#AC7FFF'; 'success'='#66F09A'; 'danger-text'='#FA8CFF'; 'warning'='#FFD24D' }
+$TK = @{ 'surface'='#000000'; 'text'='#FFFFFF'; 'renk-1'='#4DA6FF'; 'renk-3-text'='#AC7FFF'; 'success'='#66F09A'; 'danger-text'='#FA8CFF'; 'warning'='#FFD24D' }
 $TKMAP = @{ 0='surface'; 7='text'; 8='text'; 15='text'; 11='renk-1'; 13='renk-1'; 5='renk-3-text'; 10='success'; 12='danger-text'; 6='warning'; 14='warning' }
 $TKN = @{ 'fs-2'=16; 'fs-3'=20; 'space-3'=12; 'space-5'=24; 'btn-h'=28; 'btn-px'=10; 'modal-w'=560 }
 $LBL = @{ 'tr|sig.brand'='Teknesyum'; 'tr|sig.support'='Destek Ol'; 'tr|sig.site'='teknesyum.com'; 'en|sig.brand'='Teknesyum'; 'en|sig.support'='Buy me a coffee'; 'en|sig.site'='teknesyum.com' }
