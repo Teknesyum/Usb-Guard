@@ -1,6 +1,11 @@
 # Changelog
 
 
+## v1.31
+
+- The USB watcher no longer warns about a stick that Usb-Guard already protected: its own safe `autorun.inf` file is recognised, only a file that launches something counts as infected.
+- The warning window has no title bar: a thin brand-colour frame, rounded corners, drag it from anywhere; Enter fixes, Esc closes.
+
 ## v1.30
 
 - The brand blue follows the owner's new palette (#4DA6FF, 8.2:1 on black). The build now writes colours, sizes and labels from `teknesyum-ui/` into the program itself, so a palette change needs one build.

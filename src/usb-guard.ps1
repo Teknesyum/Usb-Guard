@@ -1,7 +1,7 @@
 ﻿param([switch]$Watch,[string]$Drive,[switch]$Bg,[switch]$Selfupd,[switch]$Auto)
 $ErrorActionPreference = 'SilentlyContinue'
 try{ [Console]::OutputEncoding = [Text.Encoding]::UTF8 }catch{}
-$VER = '1.30'
+$VER = '1.31'
 $ACC = 'Cyan'
 $ACC2 = 'Magenta'
 $TK = @{ 'surface'='#000000'; 'text'='#FFFFFF'; 'renk-1'='#4DA6FF'; 'renk-3-text'='#AC7FFF'; 'success'='#66F09A'; 'danger-text'='#FA8CFF'; 'warning'='#FFD24D' }
@@ -1670,7 +1670,7 @@ function Show-GuardPop($msg){
     $col={ param($h) [Drawing.ColorTranslator]::FromHtml($h) }
     $pt={ param($px) [single]$px }
     $f=New-Object Windows.Forms.Form
-    $f.Text='Usb-Guard'; $f.StartPosition='CenterScreen'; $f.TopMost=$true; $f.FormBorderStyle='FixedDialog'; $f.MaximizeBox=$false; $f.MinimizeBox=$false
+    $f.Text='Usb-Guard'; $f.StartPosition='CenterScreen'; $f.TopMost=$true; $f.FormBorderStyle='None'; $f.ShowInTaskbar=$true; $f.KeyPreview=$true
     $f.AutoScaleMode='Dpi'; $f.BackColor=& $col $k['surface']; $f.ForeColor=& $col $k['text']
     $f.Font=New-Object Drawing.Font('Segoe UI',(& $pt $n['fs-2']),[Drawing.GraphicsUnit]::Pixel)
     $pad=$n['space-5']; $w=$n['modal-w']
@@ -1695,9 +1695,12 @@ function Show-GuardPop($msg){
     $y.Location=New-Object Drawing.Point(($no.Left-$n['space-3']-$y.Width),$top)
     $f.ClientSize=New-Object Drawing.Size($w,($top+[Math]::Max($y.Height,$no.Height)+$pad))
     $f.AcceptButton=$y; $f.CancelButton=$no
+    $bc=& $col $k['renk-1']; $f.Add_Paint({ param($o,$e) $p=New-Object Drawing.Pen -ArgumentList $bc,1; $e.Graphics.DrawRectangle($p,0,0,($o.ClientSize.Width-1),($o.ClientSize.Height-1)); $p.Dispose() }.GetNewClosure())
+    $drag={ param($o,$e) if($e.Button -eq 'Left'){ [void][DwmDark]::ReleaseCapture(); [void][DwmDark]::SendMessage($f.Handle,0xA1,[IntPtr]2,[IntPtr]::Zero) } }.GetNewClosure()
+    $f.Add_MouseDown($drag); $h.Add_MouseDown($drag); $b.Add_MouseDown($drag)
     $f.Add_HandleCreated({ try{
-        if(-not ('DwmDark' -as [type])){ Add-Type 'using System;using System.Runtime.InteropServices;public class DwmDark{[DllImport("dwmapi.dll")]public static extern int DwmSetWindowAttribute(IntPtr h,int a,ref int v,int s);}' }
-        $one=1; [void][DwmDark]::DwmSetWindowAttribute($this.Handle,20,[ref]$one,4) }catch{} })
+        if(-not ('DwmDark' -as [type])){ Add-Type 'using System;using System.Runtime.InteropServices;public class DwmDark{[DllImport("dwmapi.dll")]public static extern int DwmSetWindowAttribute(IntPtr h,int a,ref int v,int s);[DllImport("user32.dll")]public static extern bool ReleaseCapture();[DllImport("user32.dll")]public static extern IntPtr SendMessage(IntPtr h,int m,IntPtr w,IntPtr l);}' }
+        $two=2; [void][DwmDark]::DwmSetWindowAttribute($this.Handle,33,[ref]$two,4) }catch{} })
     $r=$f.ShowDialog(); $f.Dispose()
     return ($r -eq [Windows.Forms.DialogResult]::Yes)
 }
@@ -1708,7 +1711,7 @@ function Start-Watcher {
     $global:GuardLnk = $lnkRx
     $global:GuardMsg = (S 'wat.popup')
     $global:GuardTK = $TK; $global:GuardTKN = $TKN
-    $global:GuardPop = ${function:Show-GuardPop}
+    $global:GuardPop = ${function:Show-GuardPop}; $global:GuardArSafe = ${function:Test-ArSafe}
     $global:GuardYes = (S 'pop.yes'); $global:GuardNo = (S 'pop.no')
     $global:GuardStamp = Join-Path $base 'lastupd.txt'
     Register-CimIndicationEvent -Query "SELECT * FROM Win32_VolumeChangeEvent WHERE EventType=2" -SourceIdentifier 'UsbGuardArrive' -Action {
@@ -1728,7 +1731,7 @@ function Start-Watcher {
         $sysP=Join-Path $root 'sysvolume'
         $sysBad=(Test-Path -LiteralPath $sysP) -and -not (Test-Path -LiteralPath ('\\?\'+$sysP+'\'+$res))
         $arI=Get-Item -LiteralPath (Join-Path $root 'autorun.inf') -Force -EA SilentlyContinue
-        $arBad=($arI -and -not $arI.PSIsContainer)
+        $arBad=($arI -and -not $arI.PSIsContainer -and -not (& $global:GuardArSafe $arI.FullName))
         $recP=Join-Path $root 'recycler'
         $recBad=(Test-Path -LiteralPath $recP) -and -not (Test-Path -LiteralPath ('\\?\'+$recP+'\'+$res))
         if($lnk -or $sysBad -or $arBad -or $recBad){
