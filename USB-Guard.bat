@@ -35,11 +35,14 @@ exit /b
 param([switch]$Watch,[string]$Drive,[switch]$Bg,[switch]$Selfupd,[switch]$Auto)
 $ErrorActionPreference = 'SilentlyContinue'
 try{ [Console]::OutputEncoding = [Text.Encoding]::UTF8 }catch{}
-$VER = '1.28'
+$VER = '1.29'
 $ACC = 'Cyan'
 $ACC2 = 'Magenta'
-$TK = @{ 'surface'='#000000'; 'text'='#FFFFFF'; 'renk-1'='#6FB7FF'; 'success'='#66F09A'; 'danger-text'='#FA8CFF'; 'warning'='#FFD24D' }
-$TKMAP = @{ 0='surface'; 7='text'; 8='text'; 15='text'; 11='renk-1'; 13='renk-1'; 10='success'; 12='danger-text'; 6='warning'; 14='warning' }
+$TK = @{ 'surface'='#000000'; 'text'='#FFFFFF'; 'renk-1'='#6FB7FF'; 'renk-3-text'='#AC7FFF'; 'success'='#66F09A'; 'danger-text'='#FA8CFF'; 'warning'='#FFD24D' }
+$TKMAP = @{ 0='surface'; 7='text'; 8='text'; 15='text'; 11='renk-1'; 13='renk-1'; 5='renk-3-text'; 10='success'; 12='danger-text'; 6='warning'; 14='warning' }
+$TKN = @{ 'fs-2'=16; 'fs-3'=20; 'space-3'=12; 'space-5'=24; 'btn-h'=28; 'btn-px'=10; 'modal-w'=560 }
+$LBL = @{ 'tr|sig.brand'='Teknesyum'; 'tr|sig.support'='Destek Ol'; 'tr|sig.site'='teknesyum.com'; 'en|sig.brand'='Teknesyum'; 'en|sig.support'='Buy me a coffee'; 'en|sig.site'='teknesyum.com' }
+$SUPC = 'DarkMagenta'
 $W = 60
 $script:M = ''
 $script:bol = $true
@@ -224,6 +227,11 @@ $STRTR = @{
  'wat.sstart'   = "İzleyiciyi Başlat"
  'wat.sdel'     = "Görevi Sil"
  'wat.sstop'    = "İzleyiciyi Durdur"
+'wat.sdir'     = "Klasörü Hazırla"
+'wat.sc'       = "C:'ye Kopyala"
+'wat.stepfail' = "  Bu adım tamamlanamadı: {0}"
+'pop.yes'      = "Evet, Düzelt"
+'pop.no'       = "Şimdi Değil"
  'wat.done'     = "  Kuruldu. Bu bilgisayardaki her hesapta çalışır; virüslü USB"
  'wat.done2'    = "  takılınca ne olduğunu anlatır ve düzeltmeyi önerir."
  'wat.failed'   = "  Görev kurulamadı. Yönetici olarak çalıştırdığından emin ol."
@@ -478,6 +486,11 @@ $STREN = @{
  'wat.sstart'   = "Start The Watcher"
  'wat.sdel'     = "Delete The Task"
  'wat.sstop'    = "Stop The Watcher"
+'wat.sdir'     = "Prepare The Folder"
+'wat.sc'       = "Copy To C:"
+'wat.stepfail' = "  This step did not finish: {0}"
+'pop.yes'      = "Yes, Fix It"
+'pop.no'       = "Not Now"
  'wat.done'     = "  Installed. It runs for every account on this PC and asks"
  'wat.done2'    = "  explains what happened and offers to fix it."
  'wat.failed'   = "  The task could not be created. Make sure you are running as admin."
@@ -615,6 +628,7 @@ function LB($k,$w,$c='Gray'){ TN ('  '+(S $k).PadRight($w)+' : ') $c }
 function NL { Write-Host ''; $script:bol=$true }
 function TN($t,$c='Gray'){ if($script:M){ $bol=$script:bol; try{ $bol=([Console]::CursorLeft -eq 0) }catch{}; if($bol){ Write-Host $script:M -NoNewline } }; Write-Host "$t" -NoNewline -ForegroundColor $c; $script:bol=$false }
 function T($t,$c='Gray'){ TN $t $c; Write-Host ''; $script:bol=$true }
+function L($k){ $v=$LBL["$($script:LANG)|$k"]; if(-not $v){ $v=$LBL["en|$k"] }; return $v }
 function Link($url,$text,$c='Cyan'){ $e=[char]27; Write-Host ("{0}]8;;{1}{0}\{2}{0}]8;;{0}\" -f $e,$url,$text) -NoNewline -ForegroundColor $c }
 function Bar($c=$ACC){ T ('  ' + ('=' * $W)) $c }
 function Drain-Keys { try{ while([Console]::KeyAvailable){ [void][Console]::ReadKey($true) } }catch{} }
@@ -677,15 +691,18 @@ function Print-Banner {
     Box-Line (SF 'ban.tag' $VER) 'Gray'
     Box-Line ''
     T ('  +'+('-'*$W)+'+') $ACC
-    TN '  ' 'DarkGray'; TN 'by ' 'DarkGray'; Link 'https://github.com/Teknesyum' 'github.com/Teknesyum' $ACC; NL
-    TN '  ' 'DarkGray'; TN 'Sponsor: ' 'DarkGray'; Link 'https://github.com/sponsors/Teknesyum' 'github.com/sponsors/Teknesyum' $ACC2; NL
+    $lw=[Math]::Max((L 'sig.brand').Length,(L 'sig.support').Length)
+    TN ('  '+(L 'sig.brand').PadRight($lw)+' : ') $ACC; Link 'https://github.com/Teknesyum' 'github.com/Teknesyum' 'Gray'; NL
+    TN ('  '+(L 'sig.support').PadRight($lw)+' : ') $SUPC; Link 'https://github.com/sponsors/Teknesyum' 'github.com/sponsors/Teknesyum' 'Gray'; NL
     NL
 }
 function Show-Footer {
     NL; NL; NL
-    TN '  Teknesyum' $ACC; T ("   |   Usb-Guard v{0}" -f $VER) 'DarkGray'
-    TN '  GitHub  : ' 'DarkGray'; Link 'https://github.com/Teknesyum' 'github.com/Teknesyum' 'White'; NL
-    TN '  Sponsor : ' 'DarkGray'; Link 'https://github.com/sponsors/Teknesyum' 'github.com/sponsors/Teknesyum' $ACC2; NL
+    TN ('  '+(L 'sig.brand')) $ACC; T ("   |   Usb-Guard v{0}" -f $VER) 'DarkGray'
+    $lw=[Math]::Max(6,(L 'sig.support').Length)
+    TN ('  '+'GitHub'.PadRight($lw)+' : ') 'DarkGray'; Link 'https://github.com/Teknesyum' 'github.com/Teknesyum' 'White'; NL
+    TN ('  '+(L 'sig.support').PadRight($lw)+' : ') $SUPC; Link 'https://github.com/sponsors/Teknesyum' 'github.com/sponsors/Teknesyum' 'White'; NL
+    TN ('  '+'Web'.PadRight($lw)+' : ') 'DarkGray'; Link ('https://'+(L 'sig.site')) (L 'sig.site') 'White'; NL
     NL
 }
 function Pal-Type {
@@ -718,6 +735,24 @@ function Set-Palette {
         $t=[uint32[]]$cur.Clone()
         foreach($k in $TKMAP.Keys){ $t[[int]$k]=Hex-Ref $TK[$TKMAP[$k]] }
         [void][Win32p]::Set($t)
+    }catch{}
+}
+function Set-AppIcon {
+    try{
+        Add-Type -AssemblyName System.Drawing
+        if(-not ('Win32i' -as [type])){ Add-Type 'using System;using System.Runtime.InteropServices;public class Win32i{[DllImport("kernel32.dll")]public static extern IntPtr GetConsoleWindow();[DllImport("user32.dll")]public static extern IntPtr SendMessage(IntPtr h,int m,IntPtr w,IntPtr l);}' }
+        $hw=[Win32i]::GetConsoleWindow(); if($hw -eq [IntPtr]::Zero){ return }
+        foreach($sz in 16,32){
+            $bmp=New-Object Drawing.Bitmap($sz,$sz); $g=[Drawing.Graphics]::FromImage($bmp); $g.SmoothingMode='AntiAlias'
+            $u=$sz/16.0
+            $pts=@((New-Object Drawing.PointF(8*$u,1*$u)),(New-Object Drawing.PointF(14*$u,3.5*$u)),(New-Object Drawing.PointF(13*$u,10*$u)),(New-Object Drawing.PointF(8*$u,15*$u)),(New-Object Drawing.PointF(3*$u,10*$u)),(New-Object Drawing.PointF(2*$u,3.5*$u)))
+            $g.FillPolygon((New-Object Drawing.SolidBrush([Drawing.ColorTranslator]::FromHtml($TK['renk-1']))),[Drawing.PointF[]]$pts)
+            $pen=New-Object Drawing.Pen -ArgumentList ([Drawing.ColorTranslator]::FromHtml($TK['surface'])),([single](1.6*$u))
+            $g.DrawLines($pen,[Drawing.PointF[]]@((New-Object Drawing.PointF(5*$u,8*$u)),(New-Object Drawing.PointF(7.3*$u,10.5*$u)),(New-Object Drawing.PointF(11*$u,5.5*$u))))
+            $g.Dispose()
+            $ic=[Drawing.Icon]::FromHandle($bmp.GetHicon())
+            [void][Win32i]::SendMessage($hw,0x80,[IntPtr]$(if($sz -eq 16){0}else{1}),$ic.Handle)
+        }
     }catch{}
 }
 function Restore-Palette {
@@ -1063,7 +1098,7 @@ function Process-Drive($dsk){
     $infected=$ins.Infected
     $arLbl=Read-ArLabel $root
     $script:rep=@{Lnk=$ins.BadLnk.Count; Quar=($ins.Payload.Count+$ins.Mimic.Count+$ins.SysHide.Count); Back=($ins.Hidden.Count+$ins.Unhide.Count); Imm=$targets.Count}
-    if($script:autoRun){ $script:pgTotal=$(if($infected){ 6 } else { 0 })+$(if($ins.Unhide.Count -gt 0){ 1 } else { 0 })+1+$targets.Count+$(if(-not $label -and $arLbl){ 1 } else { 0 })+1+3 }
+    if($script:autoRun){ $script:pgTotal=$(if($infected){ 6 } else { 0 })+$(if($ins.Unhide.Count -gt 0){ 1 } else { 0 })+1+$targets.Count+$(if(-not $label -and $arLbl){ 1 } else { 0 })+1+5 }
 
     Write-Host ''; Bar
     LB 'dr.target' $script:wDrv 'DarkGray'; T $root 'White'
@@ -1594,41 +1629,111 @@ function Stop-Watchers {
         Where-Object { $_.CommandLine -match '(?i)usb-guard\.(bat|ps1).*-Watch' -and $_.ProcessId -ne $PID } |
         ForEach-Object { Stop-Process -Id $_.ProcessId -Force -EA SilentlyContinue }
 }
+function Step-Line($row,$i,$state,$text){
+    $mk=switch($state){ 'ok' { [string][char]0x2713 } 'fail' { '!' } 'run' { '>' } default { [string]($i+1) } }
+    $mc=switch($state){ 'ok' { 'Green' } 'fail' { 'Red' } 'run' { $ACC } default { 'DarkGray' } }
+    $tc=switch($state){ 'ok' { 'Gray' } 'fail' { 'Red' } 'run' { 'White' } default { 'DarkGray' } }
+    if($row -ge 0){ try{ [Console]::SetCursorPosition(0,$row) }catch{} }
+    TN ('  '+$mk.PadLeft(2)+'  ') $mc; TN $text $tc
+    $pad=0; try{ $pad=[Console]::BufferWidth-1-[Console]::CursorLeft }catch{}; Write-Host (' '*[Math]::Max(0,$pad))
+}
+function Step-Bar($row,$fr){
+    $n=30; $k=[int][Math]::Round($n*$fr)
+    if($row -ge 0){ try{ [Console]::SetCursorPosition(0,$row) }catch{} }
+    TN ('  '+([string][char]0x2588*$k)) $ACC; TN ([string][char]0x2591*($n-$k)) 'DarkGray'; T ("  %{0,3}" -f [int][Math]::Round(100*$fr)) $ACC
+}
+function Run-Steps($steps){
+    $ok=$true; $err=''
+    if($script:pgTotal -gt 0){
+        foreach($st in $steps){ $r=Spin $st.T $st.B; if($r -eq $false){ $ok=$false } }
+        return $ok
+    }
+    $live=-not [Console]::IsOutputRedirected
+    $top=-1; $bar=-1
+    if($live){
+        $top=[Console]::CursorTop
+        for($i=0;$i -lt $steps.Count;$i++){ Step-Line -1 $i 'wait' $steps[$i].T }
+        NL; $bar=[Console]::CursorTop; Step-Bar -1 0
+    }
+    for($i=0;$i -lt $steps.Count;$i++){
+        if($live){ Step-Line ($top+$i) $i 'run' $steps[$i].T }
+        $state='ok'
+        try{ $r=& $steps[$i].B; if($r -eq $false){ $state='fail' } }catch{ $state='fail'; $err=$_.Exception.Message }
+        if($state -eq 'fail'){ $ok=$false; if(-not $err){ $err=$steps[$i].T } }
+        if($live){ Step-Line ($top+$i) $i $state $steps[$i].T; Step-Bar $bar (($i+1)/$steps.Count) }
+        else{ Step-Line -1 $i $state $steps[$i].T }
+    }
+    if($live){ try{ [Console]::SetCursorPosition(0,$bar+1) }catch{} }
+    if(-not $ok){ NL; Wrap-T (SF 'wat.stepfail' $err) 'Red' }
+    return $ok
+}
 function Install-Watcher {
-    Write-Host ''; T (S 'wat.hinst') $ACC2
-    Spin (S 'wat.scopy') {
-        [IO.Directory]::CreateDirectory($base) | Out-Null
-        Remove-Item -LiteralPath $psInstalled -Force -EA SilentlyContinue
-        $bs=Get-BatSource
-        if($bs){
-            if($bs -ne $batInstalled){ Copy-Item -LiteralPath $bs -Destination $batInstalled -Force }
-            Copy-Item -LiteralPath $batInstalled -Destination (Join-Path $env:SystemDrive ('\'+$batName)) -Force
-        }
-    } | Out-Null
+    Write-Host ''; T (S 'wat.hinst') $ACC2; NL
     $script:taskOk=$false
-    Spin (S 'wat.srun') {
-        Remove-ItemProperty -Path $runKey -Name $runName -EA SilentlyContinue
-        $xml=Join-Path $env:TEMP 'usb-guard-task.xml'
-        [IO.File]::WriteAllText($xml,(Task-Xml),[Text.Encoding]::Unicode)
-        & schtasks.exe /Create /TN $taskName /XML $xml /F 2>&1 | Out-Null
-        $script:taskOk = ($LASTEXITCODE -eq 0)
-        Remove-Item -LiteralPath $xml -Force -EA SilentlyContinue
-    } | Out-Null
-    Spin (S 'wat.sstart') {
-        Stop-Watchers
-        Start-Process powershell -WindowStyle Hidden -ArgumentList '-NoProfile','-WindowStyle','Hidden','-Command',(Self-Line $batInstalled '-Watch')
-    } | Out-Null
+    $script:bsNow=Get-BatSource
+    [void](Run-Steps @(
+        @{T=(S 'wat.sdir'); B={ [IO.Directory]::CreateDirectory($base) | Out-Null; Remove-Item -LiteralPath $psInstalled -Force -EA SilentlyContinue; $true }},
+        @{T=(S 'wat.scopy'); B={ $bs=$script:bsNow; if(-not $bs){ return $false }; if($bs -ne $batInstalled){ Copy-Item -LiteralPath $bs -Destination $batInstalled -Force -EA Stop }; $true }},
+        @{T=(S 'wat.sc'); B={ Copy-Item -LiteralPath $batInstalled -Destination (Join-Path $env:SystemDrive ('\'+$batName)) -Force -EA Stop; $true }},
+        @{T=(S 'wat.srun'); B={
+            Remove-ItemProperty -Path $runKey -Name $runName -EA SilentlyContinue
+            $xml=Join-Path $env:TEMP 'usb-guard-task.xml'
+            [IO.File]::WriteAllText($xml,(Task-Xml),[Text.Encoding]::Unicode)
+            & schtasks.exe /Create /TN $taskName /XML $xml /F 2>&1 | Out-Null
+            $script:taskOk = ($LASTEXITCODE -eq 0)
+            Remove-Item -LiteralPath $xml -Force -EA SilentlyContinue
+            $script:taskOk }},
+        @{T=(S 'wat.sstart'); B={ Stop-Watchers; Start-Process powershell -WindowStyle Hidden -ArgumentList '-NoProfile','-WindowStyle','Hidden','-Command',(Self-Line $batInstalled '-Watch'); $true }}
+    ))
     Write-Host ''
     if($script:taskOk){ T (S 'wat.done') 'Green'; T (S 'wat.done2') 'Green' } else { T (S 'wat.failed') 'Red' }
 }
 function Uninstall-Watcher {
-    Write-Host ''; T (S 'wat.hrem') $ACC2
-    Spin (S 'wat.sdel') {
-        Remove-ItemProperty -Path $runKey -Name $runName -EA SilentlyContinue
-        & schtasks.exe /Delete /TN $taskName /F 2>&1 | Out-Null
-    } | Out-Null
-    Spin (S 'wat.sstop') { Stop-Watchers } | Out-Null
+    Write-Host ''; T (S 'wat.hrem') $ACC2; NL
+    [void](Run-Steps @(
+        @{T=(S 'wat.sdel'); B={ Remove-ItemProperty -Path $runKey -Name $runName -EA SilentlyContinue; & schtasks.exe /Delete /TN $taskName /F 2>&1 | Out-Null; $true }},
+        @{T=(S 'wat.sstop'); B={ Stop-Watchers; $true }}
+    ))
     Write-Host ''; T (S 'wat.removed') 'Green'
+}
+
+function Show-GuardPop($msg){
+    Add-Type -AssemblyName System.Windows.Forms
+    Add-Type -AssemblyName System.Drawing
+    $k=if($global:GuardTK){ $global:GuardTK }else{ $TK }; $n=if($global:GuardTKN){ $global:GuardTKN }else{ $TKN }
+    $col={ param($h) [Drawing.ColorTranslator]::FromHtml($h) }
+    $pt={ param($px) [single]$px }
+    $f=New-Object Windows.Forms.Form
+    $f.Text='Usb-Guard'; $f.StartPosition='CenterScreen'; $f.TopMost=$true; $f.FormBorderStyle='FixedDialog'; $f.MaximizeBox=$false; $f.MinimizeBox=$false
+    $f.AutoScaleMode='Dpi'; $f.BackColor=& $col $k['surface']; $f.ForeColor=& $col $k['text']
+    $f.Font=New-Object Drawing.Font('Segoe UI',(& $pt $n['fs-2']),[Drawing.GraphicsUnit]::Pixel)
+    $pad=$n['space-5']; $w=$n['modal-w']
+    $h=New-Object Windows.Forms.Label; $h.FlatStyle='System'; $h.AutoSize=$true; $h.Text='Usb-Guard'; $h.ForeColor=& $col $k['renk-1']
+    $h.Font=New-Object Drawing.Font('Segoe UI',(& $pt $n['fs-3']),[Drawing.FontStyle]::Bold,[Drawing.GraphicsUnit]::Pixel); $h.Location=New-Object Drawing.Point($pad,$pad)
+    $f.Controls.Add($h)
+    $b=New-Object Windows.Forms.Label; $b.FlatStyle='System'; $b.AutoSize=$false; $b.Text=$msg; $bs=[Windows.Forms.TextRenderer]::MeasureText($msg,$f.Font,(New-Object Drawing.Size(($w-2*$pad),0)),[Windows.Forms.TextFormatFlags]'WordBreak'); $b.Size=New-Object Drawing.Size(($w-2*$pad),($bs.Height+$n['space-3']))
+    $b.Location=New-Object Drawing.Point($pad,($h.Bottom+$n['space-3'])); $f.Controls.Add($b)
+    $mk={ param($t,$bg,$fg,$bd,$dr)
+        $x=New-Object Windows.Forms.Button; $x.Text=$t; $x.AutoSize=$true; $x.FlatStyle='Flat'; $x.UseVisualStyleBackColor=$false
+        $x.BackColor=& $col $bg; $x.ForeColor=& $col $fg; $x.FlatAppearance.BorderColor=& $col $bd; $x.FlatAppearance.BorderSize=1
+        $x.FlatAppearance.MouseOverBackColor=& $col $bg; $x.FlatAppearance.MouseDownBackColor=& $col $bg
+        $x.Padding=New-Object Windows.Forms.Padding($n['btn-px'],0,$n['btn-px'],0); $x.MinimumSize=New-Object Drawing.Size(0,$n['btn-h'])
+        $x.DialogResult=$dr; $x.Cursor=[Windows.Forms.Cursors]::Hand; $x }
+    $y=& $mk (S 'pop.yes') $k['renk-1'] $k['surface'] $k['renk-1'] 'Yes'
+    $no=& $mk (S 'pop.no') $k['surface'] $k['text'] $k['text'] 'No'
+    $y.Add_MouseEnter({ $this.FlatAppearance.BorderColor=& $col $k['text'] }.GetNewClosure()); $y.Add_MouseLeave({ $this.FlatAppearance.BorderColor=& $col $k['renk-1'] }.GetNewClosure())
+    $no.Add_MouseEnter({ $this.FlatAppearance.BorderColor=& $col $k['renk-1']; $this.ForeColor=& $col $k['renk-1'] }.GetNewClosure()); $no.Add_MouseLeave({ $this.FlatAppearance.BorderColor=& $col $k['text']; $this.ForeColor=& $col $k['text'] }.GetNewClosure())
+    $f.Controls.Add($y); $f.Controls.Add($no)
+    $top=$b.Bottom+$pad
+    $no.Location=New-Object Drawing.Point(($w-$pad-$no.Width),$top)
+    $y.Location=New-Object Drawing.Point(($no.Left-$n['space-3']-$y.Width),$top)
+    $f.ClientSize=New-Object Drawing.Size($w,($top+[Math]::Max($y.Height,$no.Height)+$pad))
+    $f.AcceptButton=$y; $f.CancelButton=$no
+    $f.Add_HandleCreated({ try{
+        if(-not ('DwmDark' -as [type])){ Add-Type 'using System;using System.Runtime.InteropServices;public class DwmDark{[DllImport("dwmapi.dll")]public static extern int DwmSetWindowAttribute(IntPtr h,int a,ref int v,int s);}' }
+        $one=1; [void][DwmDark]::DwmSetWindowAttribute($this.Handle,20,[ref]$one,4) }catch{} })
+    $r=$f.ShowDialog(); $f.Dispose()
+    return ($r -eq [Windows.Forms.DialogResult]::Yes)
 }
 
 function Start-Watcher {
@@ -1636,6 +1741,9 @@ function Start-Watcher {
     $global:GuardRes = $reserved
     $global:GuardLnk = $lnkRx
     $global:GuardMsg = (S 'wat.popup')
+    $global:GuardTK = $TK; $global:GuardTKN = $TKN
+    $global:GuardPop = ${function:Show-GuardPop}
+    $global:GuardYes = (S 'pop.yes'); $global:GuardNo = (S 'pop.no')
     $global:GuardStamp = Join-Path $base 'lastupd.txt'
     Register-CimIndicationEvent -Query "SELECT * FROM Win32_VolumeChangeEvent WHERE EventType=2" -SourceIdentifier 'UsbGuardArrive' -Action {
         $dn=$Event.SourceEventArgs.NewEvent.DriveName; if(-not $dn){ return }
@@ -1658,9 +1766,8 @@ function Start-Watcher {
         $recP=Join-Path $root 'recycler'
         $recBad=(Test-Path -LiteralPath $recP) -and -not (Test-Path -LiteralPath ('\\?\'+$recP+'\'+$res))
         if($lnk -or $sysBad -or $arBad -or $recBad){
-            Add-Type -AssemblyName System.Windows.Forms
-            $r=[System.Windows.Forms.MessageBox]::Show(($global:GuardMsg -f $dn),'Usb-Guard','YesNo','Warning')
-            if($r -eq 'Yes'){ Start-Process -FilePath $global:GuardBat -Verb RunAs -ArgumentList ('-Drive '+$dn.TrimEnd(':')+' -Auto') }
+            $yes=$false; try{ $yes=& $global:GuardPop ($global:GuardMsg -f $dn) }catch{ Add-Type -AssemblyName System.Windows.Forms; $yes=([System.Windows.Forms.MessageBox]::Show(($global:GuardMsg -f $dn),'Usb-Guard','YesNo','Warning') -eq 'Yes') }
+            if($yes){ Start-Process -FilePath $global:GuardBat -Verb RunAs -ArgumentList ('-Drive '+$dn.TrimEnd(':')+' -Auto') }
         }
     } | Out-Null
     while($true){ Start-Sleep -Seconds 3600 }
@@ -2069,6 +2176,8 @@ if(-not $env:UG_CONHOST -and $env:SELFBAT -and (In-Terminal)){
 }
 Migrate-Base
 Set-Palette
+Set-AppIcon
+try{ [Console]::Title=("Usb-Guard v{0}" -f $VER) }catch{}
 Fit-Window
 try{
     if(-not $script:savedLang -and -not $Drive){ Choose-Lang }

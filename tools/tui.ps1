@@ -13,7 +13,7 @@ $names=[enum]::GetNames([ConsoleColor])
 function Slot-Hex($n){ $i=[int][ConsoleColor]$n; return $TK[$TKMAP[$i]] }
 
 $src=[IO.File]::ReadAllText((Join-Path $proj 'src\usb-guard.ps1'))
-$used=@([regex]::Matches($src,"(?:-ForegroundColor|-BackgroundColor)\s+'?(\w+)|'(\w+)'\)?\s*(?:$|;|\})|\) '(\w+)'|\s'(Black|DarkBlue|DarkGreen|DarkCyan|DarkRed|DarkMagenta|DarkYellow|Gray|DarkGray|Blue|Green|Cyan|Red|Magenta|Yellow|White)'") | ForEach-Object { $g=$_.Groups; @($g[1].Value,$g[2].Value,$g[3].Value,$g[4].Value) } | Where-Object { $names -contains $_ }) + @($ACC,$ACC2) | Select-Object -Unique
+$used=@([regex]::Matches($src,"(?:-ForegroundColor|-BackgroundColor)\s+'?(\w+)|'(\w+)'\)?\s*(?:$|;|\})|\) '(\w+)'|\s'(Black|DarkBlue|DarkGreen|DarkCyan|DarkRed|DarkMagenta|DarkYellow|Gray|DarkGray|Blue|Green|Cyan|Red|Magenta|Yellow|White)'") | ForEach-Object { $g=$_.Groups; @($g[1].Value,$g[2].Value,$g[3].Value,$g[4].Value) } | Where-Object { $names -contains $_ }) + @($ACC,$ACC2,$SUPC) | Select-Object -Unique
 
 $rows=@()
 foreach($n in $used){

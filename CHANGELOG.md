@@ -1,9 +1,15 @@
 # Changelog
 
 
+## v1.29
+
+- The USB warning is now a themed window in the owner's colours, with "Yes, Fix It" and "Not Now" buttons.
+- Setup and removal show numbered steps with a tick per step, a progress bar and a clear error line if a step fails.
+- The console window carries a shield icon in the brand colour; the brand, support and site labels come from one label file.
+
 ## v1.28
 
-- The console colours follow one token table (	eknesyum-ui/theme.tokens.json): every colour the program writes reads at 7:1 or better on black, the table is set at start and your own console colours come back at exit. The build fails if the table drifts from the tokens.
+- The console colours follow one token table (`teknesyum-ui/theme.tokens.json`): every colour the program writes reads at 7:1 or better on black, the table is set at start and your own console colours come back at exit. The build fails if the table drifts from the tokens.
 
 ## v1.27
 
