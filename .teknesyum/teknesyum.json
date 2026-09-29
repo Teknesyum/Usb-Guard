@@ -1,0 +1,92 @@
+{
+  "icon": ".teknesyum/icon.png",
+  "screenshot": ".teknesyum/shot.jpg",
+  "full": ".teknesyum/full.jpg",
+  "catalog": {
+    "category": "system",
+    "tags": {
+      "tr": [
+        "usb",
+        "güvenlik",
+        "kısayol-virüsü",
+        "taşınabilir"
+      ],
+      "en": [
+        "usb",
+        "security",
+        "shortcut-worm",
+        "portable"
+      ]
+    },
+    "summary": {
+      "tr": "USB belleklerdeki kısayol ve autorun solucanlarını temizleyip belleği bunlara karşı bağışıklayan, kurulum gerektirmeyen tek bir .bat dosyası. Gizlenen dosyaları geri çıkarır, zararlı kısayolları ve yükleri kaldırır, belleğe tuzak kilitler koyar. Menüden bilgisayarın kendisinin bulaşmış olup olmadığını da denetler; başlangıç noktalarına ve betik motoru ayarlarına bakar. İlk açılışta Türkçe ya da İngilizce seçilir, her menü maddesinin yardım sayfası vardır. Belleği dosyaları kaybolmuş gibi görünen herkes için.",
+      "en": "A single self-elevating .bat file, no install, that cleans shortcut and autorun worms off USB drives and immunises the drive against them. It brings hidden files back, removes malicious shortcuts and payloads, and places decoy locks on the drive. From the menu it also checks whether the computer itself is infected, looking at startup points and script engine settings. Turkish or English is chosen on first run, and every menu item has its own help page. For anyone whose files seem to have vanished from a flash drive."
+    },
+    "points": {
+      "tr": [
+        "Kısayol solucanlarını tanır, zararlı .lnk siler",
+        "Gizli klasördeki gerçek dosyaları geri taşır",
+        "Gizli yükleri (vbs/js/bat/hta/scr/url/scf) karantinaya alır",
+        "Dosya içeriğine bakar, uzantıya değil (magic byte kontrolü)",
+        "Kısayol argümanlarını izleyip hedef dosyaları çözer",
+        "Sistem nesnesi kılığındaki (Geri Dönüşüm Kutusu vb) klasörleri açar",
+        "System Volume Information ve $RECYCLE.BIN içini tarar",
+        "Sağdan sola yazım (RTLO) hile adlarını yakalar",
+        "Alt klasörleri üç seviye derinlikte tarar",
+        "Karantina geçmişinden geri yükleme sunar",
+        "Sahte kilitli klasörlerle USB'yi aşılar (FAT32/exFAT/NTFS)",
+        "NTFS'te Deny ACL ile yazma/silmeyi engeller",
+        "Bilgisayarı kalıcılık noktaları için tarar (Run, servisler, görevler, Winlogon)",
+        "İmzalı program yanına eklenmiş imzasız DLL'i tespit eder",
+        "Windows Defender dışlama kayıtlarını denetler",
+        "USB'den çalıştırmayı ilke ile kapatır",
+        "Windows Script Host'u kayıt defterinden kapatır",
+        "İsteğe bağlı arka plan izleyici, takılan USB'yi otomatik sorar",
+        "Kendini güncelleyen tek .bat dosyası, kurulum gerektirmez",
+        "Sürüm ve dosya bütünlüğü GitHub üzerinden doğrulanır"
+      ],
+      "en": [
+        "Detects shortcut worms, deletes malicious .lnk files",
+        "Restores real files from the hidden folder",
+        "Quarantines hidden payloads (vbs/js/bat/hta/scr/url/scf)",
+        "Checks file content, not extension (magic byte check)",
+        "Follows shortcut arguments to resolve target files",
+        "Opens folders disguised as system objects (Recycle Bin, etc.)",
+        "Scans inside System Volume Information and $RECYCLE.BIN",
+        "Catches right-to-left override (RTLO) name tricks",
+        "Scans subfolders three levels deep",
+        "Restores items from past quarantine folders",
+        "Immunizes USB with locked decoy folders (FAT32/exFAT/NTFS)",
+        "Blocks write/delete via Deny ACL on NTFS",
+        "Scans PC for persistence points (Run, services, tasks, Winlogon)",
+        "Detects unsigned DLL sideloaded next to a signed program",
+        "Audits Windows Defender exclusion entries",
+        "Disables USB execute access via policy",
+        "Disables Windows Script Host via registry",
+        "Optional background watcher prompts on USB insertion",
+        "Single self-updating .bat file, no install",
+        "Version and file integrity verified via GitHub"
+      ]
+    },
+    "uses": {
+      "tr": [
+        "USB'deki kısayol virüslerini temizle",
+        "Gizlenen dosyalarını geri getir",
+        "Belleği yeniden bulaşmaya karşı aşıla",
+        "Bilgisayarının bulaşıp bulaşmadığını tara",
+        "Kurulumsuz tek dosyayla çalıştır"
+      ],
+      "en": [
+        "Clean shortcut viruses from USB drives",
+        "Bring back your hidden files",
+        "Vaccinate drives against reinfection",
+        "Check whether your PC is infected",
+        "Run from one file, no install"
+      ]
+    },
+    "lead": {
+      "tr": "USB Kısayol Solucanı Temizleyici ve Bellek Aşılayıcı",
+      "en": "USB Shortcut Worm Cleaner and Drive Immunizer"
+    }
+  }
+}
