@@ -1,7 +1,7 @@
 ﻿param([switch]$Watch,[string]$Drive,[switch]$Bg,[switch]$Selfupd,[switch]$Auto)
 $ErrorActionPreference = 'SilentlyContinue'
 try{ [Console]::OutputEncoding = [Text.Encoding]::UTF8 }catch{}
-$VER = '1.31'
+$VER = '1.32'
 $ACC = 'Cyan'
 $ACC2 = 'Magenta'
 $TK = @{ 'surface'='#000000'; 'text'='#FFFFFF'; 'renk-1'='#4DA6FF'; 'renk-3-text'='#AC7FFF'; 'success'='#66F09A'; 'danger-text'='#FA8CFF'; 'warning'='#FFD24D' }
@@ -1547,7 +1547,7 @@ function Test-WatcherTask {
     try{ & schtasks.exe /Query /TN $taskName 2>&1 | Out-Null; return ($LASTEXITCODE -eq 0) }catch{ return $false }
 }
 function Task-Xml {
-    $argLine='-NoProfile -WindowStyle Hidden -Command "'+(Self-Line $batInstalled '-Watch')+'"'
+    $argLine='--headless powershell.exe -NoProfile -WindowStyle Hidden -Command "'+(Self-Line $batInstalled '-Watch')+'"'
     $argLine=$argLine.Replace('&','&amp;').Replace('<','&lt;').Replace('>','&gt;')
     return @"
 <?xml version="1.0" encoding="UTF-16"?>
@@ -1583,7 +1583,7 @@ function Task-Xml {
   </Settings>
   <Actions Context="Author">
     <Exec>
-      <Command>powershell.exe</Command>
+      <Command>conhost.exe</Command>
       <Arguments>$argLine</Arguments>
     </Exec>
   </Actions>
@@ -1649,7 +1649,7 @@ function Install-Watcher {
             $script:taskOk = ($LASTEXITCODE -eq 0)
             Remove-Item -LiteralPath $xml -Force -EA SilentlyContinue
             $script:taskOk }},
-        @{T=(S 'wat.sstart'); B={ Stop-Watchers; Start-Process powershell -WindowStyle Hidden -ArgumentList '-NoProfile','-WindowStyle','Hidden','-Command',(Self-Line $batInstalled '-Watch'); $true }}
+        @{T=(S 'wat.sstart'); B={ Stop-Watchers; Start-Process conhost.exe -WindowStyle Hidden -ArgumentList ('--headless powershell.exe -NoProfile -WindowStyle Hidden -Command "'+(Self-Line $batInstalled '-Watch')+'"'); $true }}
     ))
     Write-Host ''
     if($script:taskOk){ T (S 'wat.done') 'Green'; T (S 'wat.done2') 'Green' } else { T (S 'wat.failed') 'Red' }
@@ -1706,6 +1706,7 @@ function Show-GuardPop($msg){
 }
 
 function Start-Watcher {
+    try{ $q=(& schtasks.exe /Query /TN $taskName /XML 2>$null) -join "`n"; if($q -and $q -notmatch 'conhost\.exe'){ $x=Join-Path $env:TEMP 'usb-guard-task.xml'; [IO.File]::WriteAllText($x,(Task-Xml),[Text.Encoding]::Unicode); & schtasks.exe /Create /TN $taskName /XML $x /F 2>&1 | Out-Null; Remove-Item -LiteralPath $x -Force -EA SilentlyContinue } }catch{}
     $global:GuardBat = if(Test-Path -LiteralPath $batInstalled){ $batInstalled } else { Get-BatSource }
     $global:GuardRes = $reserved
     $global:GuardLnk = $lnkRx
@@ -1722,7 +1723,7 @@ function Start-Watcher {
             try{ $last=[IO.File]::ReadAllText($global:GuardStamp).Trim() }catch{}
             if($last -ne $today -and $global:GuardBat){
                 [IO.File]::WriteAllText($global:GuardStamp,$today)
-                Start-Process powershell -WindowStyle Hidden -ArgumentList '-NoProfile','-WindowStyle','Hidden','-Command',("& ([scriptblock]::Create([IO.File]::ReadAllText('"+$global:GuardBat+"'))) -Selfupd")
+                Start-Process conhost.exe -WindowStyle Hidden -ArgumentList ('--headless powershell.exe -NoProfile -WindowStyle Hidden -Command "& ([scriptblock]::Create([IO.File]::ReadAllText(''' + $global:GuardBat + '''))) -Selfupd"')
             }
         }catch{}
         $root="$dn\"; $res=$global:GuardRes

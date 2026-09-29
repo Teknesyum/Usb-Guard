@@ -1,6 +1,10 @@
 # Changelog
 
 
+## v1.32
+
+- The USB watcher never shows a window: it runs through a headless console, so Windows Terminal no longer opens a window at sign-in. An older install fixes its own task on the next sign-in.
+
 ## v1.31
 
 - The USB watcher no longer warns about a stick that Usb-Guard already protected: its own safe `autorun.inf` file is recognised, only a file that launches something counts as infected.
