@@ -175,6 +175,17 @@ Menüden kurulur. Virüslü USB takıldığında Evet / Hayır sorusuyla temizle
 ## Kullanım
 
 
+**Önerilen: Teknesyum Base (Windows).**
+
+1. [`Teknesyum-Base.exe`](https://github.com/Teknesyum/Teknesyum-Base/releases/latest/download/Teknesyum-Base.exe) dosyasını ([`.sha256`](https://github.com/Teknesyum/Teknesyum-Base/releases/latest/download/Teknesyum-Base.exe.sha256)) indirip çalıştır. Yönetici hakkı gerekmez.
+2. Listeden **Usb-Guard**'ı bulup kur. Base sonradan güncellemeyi ve kaldırmayı da yapar.
+
+Base henüz imzalı değil; Windows SmartScreen ilk açılışta uyarabilir: *Ek bilgi*'yi, sonra *Yine de çalıştır*'ı seç. Ayrıntı: [Teknesyum Base](https://github.com/Teknesyum/Teknesyum-Base).
+
+Base yayındaki zip'i indirir; içinde aynı düz `USB-Guard.bat` vardır. Aşağıdaki 1. adımı atla.
+
+**Ya da elle:**
+
 1. **`USB-Guard.bat`** dosyasını indir.
 
 Kurulum paketi ve paket yöneticisi kaydı bilerek yok. USB-Guard tek dosyadır; çalıştırmadan
