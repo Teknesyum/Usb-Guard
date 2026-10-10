@@ -178,6 +178,17 @@ menu.
 ## Usage
 
 
+**Recommended: Teknesyum Base (Windows).**
+
+1. Download [`Teknesyum-Base.exe`](https://github.com/Teknesyum/Teknesyum-Base/releases/latest/download/Teknesyum-Base.exe) ([`.sha256`](https://github.com/Teknesyum/Teknesyum-Base/releases/latest/download/Teknesyum-Base.exe.sha256)) and run it. No admin rights are needed.
+2. Find **Usb-Guard** in the list and install it. Base also updates and removes it later.
+
+Base is not code-signed yet, so Windows SmartScreen may warn on first launch: choose *More info*, then *Run anyway*. More: [Teknesyum Base](https://github.com/Teknesyum/Teknesyum-Base).
+
+Base fetches the release zip, which holds the same plain `USB-Guard.bat`; skip step 1 below.
+
+**Or manually:**
+
 1. Download **`USB-Guard.bat`**.
 
 There is no installer and no package-manager entry, on purpose. USB-Guard is one file you
